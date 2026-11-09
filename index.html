@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<!-- ניהול חניה בבניין · עמנואל זמיר 8 · גרסה 3.1 · 09/11/2026 -->
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>ניהול חניה בבניין · עמנואל זמיר 8</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1C4FA0">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="חניה זמיר 8">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #ECEEF0; --surface: #FFFFFF; --sunk: #F4F5F6;
+  --text: #1B232C; --muted: #5E6873; --line: #D7DBDF;
+  --sign: #1C4FA0; --on-sign: #FFFFFF; --sign-soft: #E3EBF8;
+  --paint: #F0C21B; --asphalt: #2D3237;
+  --ok: #1E7348; --ok-soft: #E2F2E9;
+  --wait: #8A5300; --wait-soft: #FBF0DC;
+  --danger: #B3261E; --danger-soft: #FBE7E5;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #111417; --surface: #1B1F23; --sunk: #23282D;
+    --text: #E8ECEF; --muted: #9AA4AE; --line: #30363C;
+    --sign: #6F9CEB; --on-sign: #0E1A2E; --sign-soft: #1A2840;
+    --asphalt: #0B0D0F;
+    --ok: #6CCB97; --ok-soft: #173326;
+    --wait: #F0B860; --wait-soft: #3A2A10;
+    --danger: #F09089; --danger-soft: #3D1A17;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body { font: 16px/1.5 "Heebo", "Arial Hebrew", Arial, sans-serif; }
+.wrap { max-width: 520px; margin: 0 auto; padding: calc(16px + env(safe-area-inset-top, 0px)) 14px calc(80px + env(safe-area-inset-bottom, 0px)); }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--sign); outline-offset: 2px; }
+
+header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.sign { width: 44px; height: 44px; border-radius: 8px; background: var(--sign); color: var(--on-sign);
+  display: grid; place-items: center; font-weight: 700; font-size: 28px; flex: none; }
+.titles { flex: 1; line-height: 1.25; }
+header h1 { font-size: 20px; font-weight: 700; margin: 0; }
+.addr { font-size: 15px; color: var(--muted); }
+.ver { font-size: 12px; font-weight: 400; color: var(--muted); margin-inline-start: 6px; white-space: nowrap; }
+.vacate-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 8px 10px; background: var(--sunk); border-radius: 10px; }
+.vacate { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 6px 12px; font-size: 14px; white-space: nowrap; }
+.pill.gone { background: var(--sunk); color: var(--muted); }
+.toast button.go { border: 0; background: transparent; color: var(--paint); font-weight: 700; white-space: nowrap; padding: 0; font-size: 14px; }
+.note { margin-top: 6px; font-size: 13px; padding: 6px 10px; border-radius: 8px; background: var(--sunk); color: var(--muted); overflow-wrap: anywhere; }
+.note.waiting { background: var(--wait-soft); color: var(--wait); }
+.counter { font-size: 12px; color: var(--muted); text-align: left; margin-top: 2px; }
+.apt-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-size: 14px; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+.card h2 { font-size: 16px; font-weight: 500; margin: 0 0 10px; }
+.muted { color: var(--muted); font-size: 13px; }
+
+.setting { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.max-line { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin: -6px 2px 14px; }
+.max-line button { margin-inline-start: auto; border: 0; background: transparent; color: var(--muted); text-decoration: underline; font-size: 13px; padding: 4px; }
+.warn-red { color: var(--danger); font-size: 13px; }
+.stepper { display: flex; align-items: center; gap: 4px; }
+.stepper button { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--sunk); font-size: 20px; line-height: 1; }
+.stepper button:disabled { opacity: .4; cursor: default; }
+.stepper output { min-width: 32px; text-align: center; font-size: 20px; font-weight: 700; }
+
+.days { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; }
+.day { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 14px; white-space: nowrap; font-size: 14px; }
+.day[aria-pressed="true"] { background: var(--sign); color: var(--on-sign); border-color: var(--sign); }
+.day input { border: 0; background: transparent; font-size: 14px; width: 9.5em; }
+
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.big { min-height: 60px; border-radius: 14px; border: 2px solid var(--sign); background: var(--surface); color: var(--sign); font-weight: 700; font-size: 17px; }
+.big.primary { background: var(--sign); color: var(--on-sign); }
+
+form.card label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+form.card input[type=text], form.card input[type=number], form.card input[type=datetime-local] {
+  width: 100%; height: 46px; border: 1px solid var(--line); border-radius: 10px; background: var(--sunk); padding: 0 12px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-actions { display: flex; gap: 10px; margin-top: 14px; }
+.submit { flex: 1; height: 48px; border: 0; border-radius: 12px; background: var(--sign); color: var(--on-sign); font-weight: 700; }
+.ghost { height: 48px; padding: 0 16px; border: 1px solid var(--line); border-radius: 12px; background: transparent; }
+.err { color: var(--danger); font-size: 13px; margin-top: 8px; min-height: 1em; }
+
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.stat { background: var(--sunk); border-radius: 12px; padding: 10px 12px; }
+.stat b { display: block; font-size: 26px; font-weight: 700; line-height: 1.2; }
+
+/* שורה: הטקסט ברוחב מלא, והחניות, הסטטוס והכפתורים יורדים לשורה משלהם מתחת */
+.item { display: flex; flex-wrap: wrap; align-items: flex-start; column-gap: 12px; row-gap: 8px; padding: 10px 0; border-top: 1px solid var(--line); }
+.item:first-of-type { border-top: 0; }
+.pos { width: 28px; height: 28px; border-radius: 50%; background: var(--sunk); display: grid; place-items: center; font-size: 13px; font-weight: 500; flex: none; }
+.item .main { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
+.item .main > div:first-child { font-weight: 500; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start; align-items: center; }
+.item > .tags { flex-basis: 100%; }
+.item > .pos ~ .tags { padding-inline-start: 40px; }
+.item > .bay ~ .tags { padding-inline-start: 58px; }
+.item > .bay { flex: none; }
+/* חניה שהתקבלה מחוץ לאפליקציה: מסגרת מקווקוות */
+.ext { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 10px; border: 1.5px dashed var(--muted); border-radius: 4px; font-weight: 700; font-size: 15px; }
+.ext small { font-size: 11px; font-weight: 400; color: var(--muted); }
+.ext-form { margin-top: 10px; padding: 10px; border-radius: 10px; background: var(--sunk); }
+.ext-form input { width: 100%; height: 42px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 0 10px; }
+.ext-form label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.tl { margin-top: 8px; border-inline-start: 2px solid var(--line); padding-inline-start: 10px; }
+.tl-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 3px 0; font-size: 13px; }
+.tl-row .pill { padding: 2px 8px; }
+.ext-x { border: 0; background: transparent; color: var(--danger); font-size: 13px; text-decoration: underline; padding: 4px; }
+
+/* חניה מצוירת על אספלט: הסימן של האפליקציה */
+.bay { position: relative; min-width: 46px; height: 34px; padding: 0 10px; background: var(--asphalt); color: #fff;
+  font-weight: 700; display: inline-grid; place-items: center; border-radius: 4px; font-size: 15px; }
+.bay::before, .bay::after { content: ""; position: absolute; top: 4px; bottom: 4px; width: 3px; background: var(--paint); }
+.bay::before { right: 3px; } .bay::after { left: 3px; }
+.pill { font-size: 12px; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.pill.wait { background: var(--wait-soft); color: var(--wait); }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.free { background: var(--sign-soft); color: var(--sign); }
+.cancel { border: 1px solid var(--danger); color: var(--danger); background: transparent; border-radius: 10px; padding: 6px 12px; font-size: 14px; }
+.mine-tag { font-size: 11px; color: var(--sign); margin-inline-start: 6px; }
+
+.alert { background: var(--wait-soft); color: var(--wait); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; display: flex; gap: 10px; align-items: flex-start; }
+.alert .x { margin-inline-start: auto; border: 0; background: transparent; color: inherit; font-size: 20px; line-height: 1; }
+.empty { color: var(--muted); font-size: 14px; padding: 6px 0; }
+.who { font-weight: 400; }
+.lock-note { margin-top: 10px; font-size: 13px; padding: 8px 10px; border-radius: 10px; background: var(--wait-soft); color: var(--wait); }
+.lock-note .ghost { color: var(--text); background: var(--surface); height: 42px; }
+.req-star { color: var(--danger); }
+.tel { color: var(--sign); text-decoration: none; font-size: 13px; white-space: nowrap; direction: ltr; unicode-bidi: isolate; }
+.call { display: inline-block; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 6px 12px; font-size: 14px; color: var(--sign); text-decoration: none; white-space: nowrap; }
+#reqPhone, #offPhone { text-align: right; }
+
+/* התקנה, התראות וקוד העברה */
+.app-steps { margin-top: 8px; }
+.app-step { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; padding: 4px 0; }
+.app-step b { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sign-soft); color: var(--sign); display: grid; place-items: center; font-size: 12px; }
+.code-big { font-size: 30px; font-weight: 700; letter-spacing: 6px; direction: ltr; text-align: center; margin: 10px 0 2px; }
+.app-actions { display: flex; gap: 10px; margin-top: 12px; }
+.app-actions .submit, .app-actions .ghost { height: 44px; }
+.linkish { border: 0; background: transparent; color: var(--sign); text-decoration: underline; font-size: 14px; padding: 6px; width: 100%; margin-top: 8px; }
+.choice { display: block; width: 100%; text-align: right; border-radius: 12px; padding: 12px 14px; margin-top: 10px; border: 1.5px solid var(--sign); background: var(--surface); }
+.choice.primary { background: var(--sign); color: var(--on-sign); }
+.choice b { display: block; font-size: 15px; font-weight: 500; }
+.choice span { font-size: 12px; opacity: .85; }
+.xsteps { font-size: 13px; color: var(--muted); line-height: 1.6; margin-top: 6px; }
+.xsteps div { display: flex; gap: 6px; align-items: flex-start; margin-bottom: 6px; }
+.xsteps b { color: var(--text); font-weight: 500; }
+.copy { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 4px 10px; font-size: 12px; margin-top: 4px; }
+.xfer-tip { display: flex; gap: 10px; align-items: flex-start; }
+.xfer-tip .ic { font-size: 20px; color: var(--sign); line-height: 1.2; }
+.foot { text-align: center; font-size: 12px; color: var(--muted); margin-top: 4px; }
+.foot button { border: 0; background: transparent; color: var(--sign); text-decoration: underline; font-size: 12px; padding: 4px; }
+
+.toast { position: fixed; inset-inline: 12px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); max-width: 496px; margin: 0 auto; background: var(--text); color: var(--bg);
+  border-radius: 14px; padding: 12px 14px; display: none; gap: 10px; align-items: center; z-index: 5; }
+.toast.show { display: flex; }
+.toast a { color: var(--paint); font-weight: 700; white-space: nowrap; }
+.toast .x { margin-inline-start: auto; border: 0; background: transparent; color: inherit; font-size: 20px; }
+.toast.ok { background: var(--ok-soft); color: var(--ok); border: 1px solid var(--ok); }
+.toast.err { background: var(--danger-soft); color: var(--danger); border: 1px solid var(--danger); }
+.toast.ok a, .toast.err a { color: inherit; text-decoration: underline; }
+.t-icon { font-size: 22px; line-height: 1; flex: none; }
+.t-body { min-width: 0; }
+.t-title { font-weight: 700; }
+.t-sub { font-size: 13px; }
+.t-sub:empty { display: none; }
+.spin { display: inline-block; width: 12px; height: 12px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; vertical-align: -1px; margin-inline-end: 6px; }
+@media (prefers-reduced-motion: no-preference) { .spin { animation: spin .8s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } } }
+
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+.overlay.show { display: flex; }
+.overlay .card { width: 100%; max-width: 380px; margin: 0; }
+.loading { text-align: center; color: var(--muted); padding: 30px 0; }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: no-preference) { .toast.show { animation: up .2s ease-out; } @keyframes up { from { transform: translateY(12px); opacity: 0; } } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="sign" aria-hidden="true">P</div>
+    <div class="titles"><h1>ניהול חניה בבניין<span class="ver" id="ver"></span></h1><div class="addr">עמנואל זמיר 8</div></div>
+    <button class="apt-btn" id="aptBtn" type="button">דירה —</button>
+  </header>
+
+  <nav class="days" aria-label="בחירת יום">
+    <button class="day" type="button" data-off="0">היום</button>
+    <button class="day" type="button" data-off="1">מחר</button>
+    <label class="day" id="otherDay">תאריך אחר <input type="date" id="dayPick" aria-label="בחר תאריך"></label>
+  </nav>
+
+  <div class="actions">
+    <button class="big primary" type="button" id="openReq">אני צריך חניה</button>
+    <button class="big" type="button" id="openOff">אני מוסר חניה</button>
+  </div>
+
+  <form class="card" id="reqForm" hidden novalidate>
+    <h2 id="reqTitle">בקשת חניה</h2>
+    <div class="row2">
+      <div><label for="reqFirst">שם פרטי <span class="req-star">*</span></label><input type="text" id="reqFirst" maxlength="20" autocomplete="given-name" required></div>
+      <div><label for="reqLast">שם משפחה · רשות</label><input type="text" id="reqLast" maxlength="20" autocomplete="family-name"></div>
+    </div>
+    <label for="reqPhone">טלפון · רשות</label>
+    <input type="tel" id="reqPhone" maxlength="15" inputmode="tel" autocomplete="tel" dir="ltr">
+    <label for="reqCount">כמה חניות?</label>
+    <div class="stepper">
+      <button type="button" id="cntMinus" aria-label="הפחת">−</button>
+      <output id="reqCount">1</output>
+      <button type="button" id="cntPlus" aria-label="הוסף">+</button>
+    </div>
+    <label for="reqFrom">מתי</label>
+    <input type="datetime-local" id="reqFrom" required>
+    <label for="reqTo">עד מתי</label>
+    <input type="datetime-local" id="reqTo" required>
+    <label for="reqNote">הערה, לא חובה</label>
+    <input type="text" id="reqNote" maxlength="80">
+    <div class="counter" id="reqNoteCount">0/80</div>
+    <div class="lock-note" id="reqLock" hidden>
+      <div id="reqLockText"></div>
+      <button class="ghost" type="button" id="reqMore" style="width:100%;margin-top:8px">+ בקשה נוספת</button>
+    </div>
+    <div class="err" id="reqErr" role="alert"></div>
+    <div class="form-actions">
+      <button class="submit" type="submit" id="reqSubmit">הכנס אותי לתור</button>
+      <button class="ghost" type="button" data-close="reqForm" id="reqClose">סגור</button>
+    </div>
+    <div class="muted" style="margin-top:8px">זמן הבקשה נרשם אוטומטית וקובע את המקום בתור</div>
+  </form>
+
+  <form class="card" id="offForm" hidden novalidate>
+    <h2 id="offTitle">מסירת חניה</h2>
+    <div class="row2">
+      <div><label for="offFirst">שם פרטי <span class="req-star">*</span></label><input type="text" id="offFirst" maxlength="20" autocomplete="given-name" required></div>
+      <div><label for="offLast">שם משפחה · רשות</label><input type="text" id="offLast" maxlength="20" autocomplete="family-name"></div>
+    </div>
+    <label for="offPhone">טלפון · רשות</label>
+    <input type="tel" id="offPhone" maxlength="15" inputmode="tel" autocomplete="tel" dir="ltr">
+    <label for="offSpot">מספר חניה</label>
+    <input type="text" id="offSpot" inputmode="numeric" maxlength="10" required>
+    <label for="offFrom">פנויה מ־</label>
+    <input type="datetime-local" id="offFrom" required>
+    <label for="offTo">פנויה עד</label>
+    <input type="datetime-local" id="offTo" required>
+    <div class="err" id="offErr" role="alert"></div>
+    <div class="form-actions">
+      <button class="submit" type="submit" id="offSubmit">מסור חניה</button>
+      <button class="ghost" type="button" data-close="offForm" id="offClose">סגור</button>
+    </div>
+  </form>
+
+  <section class="card" id="appCard" hidden></section>
+
+  <div id="alerts"></div>
+
+  <section class="card" id="mineCard" hidden>
+    <h2 id="mineTitle">שלי</h2>
+    <div id="mineList"></div>
+  </section>
+
+  <div class="stats">
+    <div class="stat"><span class="muted">חניות פנויות</span><b id="statFree">–</b></div>
+    <div class="stat"><span class="muted">ממתינים בתור</span><b id="statWait">–</b></div>
+  </div>
+
+  <section class="card">
+    <h2 id="queueTitle">תור הבקשות</h2>
+    <div id="queueList"><div class="loading">טוען…</div></div>
+  </section>
+
+  <section class="card">
+    <h2 id="offersTitle">חניות שנמסרו</h2>
+    <div id="offersList"></div>
+  </section>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span class="t-icon" id="toastIcon" aria-hidden="true"></span><div class="t-body"><div class="t-title" id="toastText"></div><div class="t-sub" id="toastSub"></div></div><a id="toastGo" href="https://chat.whatsapp.com/LEOuJTs7H9wCfbiMCOFCmb" target="_blank" rel="noopener" hidden>לקבוצת הבניין</a><button class="x" type="button" id="toastX" aria-label="סגור">×</button></div>
+
+<div class="overlay" id="aptOverlay">
+  <form class="card" id="aptForm" novalidate>
+    <div id="welcomeBox" hidden>
+      <h2>ברוך הבא לאפליקציה</h2>
+      <div class="muted">השתמשת בעבר באפליקציה בדפדפן בטלפון הזה?</div>
+      <button class="choice" type="button" id="welcomeCode"><b>כן, יש לי קוד העברה</b><span>הבקשות, המסירות והשם שלך יעברו לכאן</span></button>
+      <button class="choice primary" type="button" id="welcomeNew"><b>לא, אני מתחיל מחדש</b><span>ממשיכים למספר דירה</span></button>
+    </div>
+    <div id="aptBox">
+      <h2>מה מספר הדירה שלך?</h2>
+      <div class="muted">הטלפון יזכור אותו. רק מהטלפון הזה אפשר יהיה לבטל את הבקשות והמסירות שלך.</div>
+      <label for="aptInput" class="muted" style="display:block;margin:12px 0 4px">מספר דירה</label>
+      <input type="number" id="aptInput" min="1" max="51" inputmode="numeric" style="width:100%;height:46px;border:1px solid var(--line);border-radius:10px;background:var(--sunk);padding:0 12px">
+      <div class="err" id="aptErr" role="alert"></div>
+      <div class="form-actions"><button class="submit" type="submit">שמור</button></div>
+    </div>
+    <div id="xferBox" hidden>
+      <h2>הזנת קוד העברה</h2>
+      <div class="xsteps">
+        <div><b>1.</b><span>פותחים את האפליקציה בדפדפן שבו השתמשת<br><button class="copy" type="button" id="copyLink">העתקת הקישור</button></span></div>
+        <div><b>2.</b><span>לוחצים שם "קבלת קוד העברה"</span></div>
+        <div><b>3.</b><span>חוזרים לכאן ומקלידים את 6 הספרות</span></div>
+      </div>
+      <label for="xferInput" class="muted" style="display:block;margin:4px 0">קוד העברה</label>
+      <input type="text" id="xferInput" inputmode="numeric" maxlength="6" dir="ltr" autocomplete="one-time-code" style="width:100%;height:52px;border:1px solid var(--line);border-radius:10px;background:var(--sunk);padding:0 12px;text-align:center;letter-spacing:10px;font-size:24px;font-weight:700">
+      <div class="err" id="xferErr" role="alert"></div>
+      <div class="form-actions" style="margin-top:8px"><button class="submit" type="button" id="xferGo">העבר את הפרטים</button></div>
+      <button class="linkish" type="button" id="xferBack" style="text-decoration:none;color:var(--muted)">חזרה</button>
+    </div>
+  </form>
+</div>
+
+<script>
+var CONFIG = window.CONFIG || { API_URL: '', ONESIGNAL_APP_ID: '' };
+var APTS = 51;
+var VERSION = '3.1';
+var editReq = null, editOff = null;
+var GROUP_URL = 'https://chat.whatsapp.com/LEOuJTs7H9wCfbiMCOFCmb';
+var MIN_MS = 30 * 60 * 1000;
+var mem = {};
+var store = {
+  get: function (k) { try { return localStorage.getItem(k); } catch (e) { return mem[k] || null; } },
+  set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) { mem[k] = v; } }
+};
+function newId() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+}
+
+// ---------- הפרטים של הטלפון: מעבר מהקישור הישן וקוד העברה ----------
+var PROFILE = { d: 'parkingDevice', a: 'parkingApt', f: 'parkingFirst', l: 'parkingLast', p: 'parkingPhone', s: 'parkingSpot', x: 'parkingDismissed' };
+function applyProfile(m) {
+  if (!m || !m.d) return false;
+  for (var k in PROFILE) if (m[k] != null && m[k] !== '') store.set(PROFILE[k], String(m[k]).slice(0, 2000));
+  return true;
+}
+function profile() {
+  var m = {};
+  for (var k in PROFILE) { var v = store.get(PROFILE[k]); if (v) m[k] = v; }
+  return m;
+}
+// הגעה מהקישור הישן: הפרטים מגיעים בכתובת, נשמרים, והכתובת מתנקה
+(function () {
+  var h = location.hash;
+  if (h.indexOf('#m=') !== 0) return;
+  try { applyProfile(JSON.parse(decodeURIComponent(h.slice(3)))); } catch (e) {}
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+})();
+
+var device = store.get('parkingDevice');
+if (!device) { device = newId(); store.set('parkingDevice', device); }
+var apt = Number(store.get('parkingApt')) || 0;
+
+var state = null;
+var vacByReq = {}, extByReq = {};
+var extOpen = null;
+var dayOffset = 0, pickedDay = null;
+var reqCount = 1;
+var pending = 0;
+
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+// פנייה לשרת ב-Apps Script. התשובה: { ok, data } או { ok: false, error }
+function call(fn, arg) {
+  if (!CONFIG.API_URL || /PASTE/.test(CONFIG.API_URL)) return Promise.reject(new Error('האפליקציה עוד לא חוברה לשרת'));
+  return fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify({ fn: fn, arg: arg }) })
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      if (!j || !j.ok) throw new Error((j && j.error) || 'משהו השתבש. נסה שוב.');
+      return j.data;
+    })
+    .catch(function (e) {
+      if (e && (e.name === 'TypeError' || e.name === 'SyntaxError')) throw new Error('אין חיבור לשרת. בדוק את האינטרנט ונסה שוב.');
+      throw e;
+    });
+}
+function errMsg(e) {
+  var m = (e && e.message) || String(e);
+  return m.replace(/^Error:\s*/, '') || 'משהו השתבש. נסה שוב.';
+}
+
+// ---------- תאריכים ----------
+var DAYS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
+function pad(n) { return (n < 10 ? '0' : '') + n; }
+function startOfDay(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+function dayLabel(ms) { var d = new Date(ms); return DAYS[d.getDay()] + ' ' + pad(d.getDate()) + '/' + pad(d.getMonth() + 1); }
+function timeLabel(ms) { var d = new Date(ms); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+function rangeLabel(a, b) {
+  if (startOfDay(a).getTime() === startOfDay(b).getTime()) return dayLabel(a) + ' · ' + timeLabel(a) + '–' + timeLabel(b);
+  return dayLabel(a) + ' ' + timeLabel(a) + ' עד ' + dayLabel(b) + ' ' + timeLabel(b);
+}
+function toInput(ms) { var d = new Date(ms); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+function fromInput(v) { if (!v) return 0; var t = new Date(v).getTime(); return isNaN(t) ? 0 : t; }
+function selectedDay() {
+  if (pickedDay) return pickedDay;
+  var d = startOfDay(new Date()); d.setDate(d.getDate() + dayOffset); return d;
+}
+function dayBounds() { var s = selectedDay(); var e = new Date(s); e.setDate(e.getDate() + 1); return [s.getTime(), e.getTime()]; }
+function overlaps(x, b) { return x.from < b[1] && x.to > b[0]; }
+
+// ---------- רינדור ----------
+function render() {
+  if (!state) return;
+  $('aptBtn').textContent = apt ? 'דירה ' + apt : 'בחר דירה';
+  renderCount();
+
+  var days = document.querySelectorAll('.day[data-off]');
+  for (var i = 0; i < days.length; i++) days[i].setAttribute('aria-pressed', !pickedDay && Number(days[i].dataset.off) === dayOffset);
+  $('otherDay').setAttribute('aria-pressed', !!pickedDay);
+
+  var byReq = {}, byOff = {};
+  vacByReq = {}; extByReq = {};
+  state.assignments.forEach(function (a) {
+    if (a.status === 'vacated') { (vacByReq[a.reqId] = vacByReq[a.reqId] || []).push(a); return; }
+    if (a.status === 'external') { (extByReq[a.reqId] = extByReq[a.reqId] || []).push(a); return; }
+    if (a.status !== 'active') return;
+    (byReq[a.reqId] = byReq[a.reqId] || []).push(a);
+    (byOff[a.offerId] = byOff[a.offerId] || []).push(a);
+  });
+  var reqById = {}; state.requests.forEach(function (r) { reqById[r.id] = r; });
+
+  var b = dayBounds();
+  var dayName = selectedDay().getTime() === startOfDay(new Date()).getTime() ? 'היום' : dayLabel(b[0]);
+  $('queueTitle').textContent = 'תור הבקשות · ' + dayName;
+  $('offersTitle').textContent = 'חניות שנמסרו · ' + dayName;
+
+  var queue = state.requests.filter(function (r) { return overlaps(r, b); })
+    .sort(function (x, y) { return x.createdAt - y.createdAt; });
+  var waiting = 0;
+  $('queueList').innerHTML = queue.length ? queue.map(function (r, i) {
+    var got = byReq[r.id] || [];
+    var gone = vacByReq[r.id] || [];
+    var ext = extByReq[r.id] || [];
+    var need = r.count - got.length - gone.length - ext.length;
+    if (need > 0) waiting++;
+    var tags = got.map(function (a) { return '<span class="bay">' + esc(a.spot) + '</span>'; }).join('') + ext.map(extHtml).join('') +
+      gone.map(function (a) { return '<span class="pill gone">' + esc(a.spot) + ' פונתה</span>'; }).join('');
+    if (need > 0) {
+      var ahead = blocker(r, queue, i);
+      tags += '<span class="pill wait">' + (got.length || ext.length ? 'עוד ' + need + ' ממתינות' : (r.count > 1 ? 'ממתין ל־' + r.count : 'ממתין')) +
+        (ahead ? ' · אחרי דירה ' + ahead : '') + '</span>';
+    }
+    return '<div class="item"><span class="pos">' + (i + 1) + '</span><div class="main"><div>דירה ' + r.apt + whoHtml(r) +
+      (r.count > 1 ? ' · ' + r.count + ' חניות' : '') + (r.mine ? '<span class="mine-tag">שלי</span>' : '') +
+      '</div><div class="muted">' + telHtml(r.phone) + rangeLabel(r.from, r.to) + ' · ביקש ' + dayLabel(r.createdAt) + ' ' + timeLabel(r.createdAt) +
+      '</div>' + noteHtml(r, need > 0) + '</div><div class="tags">' + tags + '</div></div>';
+  }).join('') : '<div class="empty">אין בקשות ליום הזה</div>';
+
+  var offers = state.offers.filter(function (o) { return overlaps(o, b); })
+    .sort(function (x, y) { return x.createdAt - y.createdAt; });
+  var free = 0;
+  $('offersList').innerHTML = offers.length ? offers.map(function (o) {
+    var used = (byOff[o.id] || []).map(function (a) { var r = reqById[a.reqId]; return r ? { r: r } : null; }).filter(Boolean);
+    if (!used.length) free++;
+    return '<div class="item"><span class="bay">' + esc(o.spot) + '</span><div class="main"><div>מדירה ' + o.apt + whoHtml(o) +
+      (o.mine ? '<span class="mine-tag">שלי</span>' : '') + '</div><div class="muted">' + telHtml(o.phone) + rangeLabel(o.from, o.to) +
+      '</div>' + timelineHtml(o, used) + '</div>' + (used.length ? '' : '<div class="tags"><span class="pill free">פנויה</span></div>') + '</div>';
+  }).join('') : '<div class="empty">עדיין לא נמסרו חניות ליום הזה</div>';
+
+  $('statFree').textContent = free;
+  $('statWait').textContent = waiting;
+
+  renderMine(byReq, byOff, reqById);
+  renderAlerts();
+}
+
+// הבקשה הראשונה לפני r בתור, לזמנים חופפים, שעוד לא קיבלה את כל החניות שלה
+function blocker(r, queue, i) {
+  for (var k = 0; k < i; k++) {
+    var q = queue[k];
+    if (q.apt === r.apt || !(q.from < r.to && q.to > r.from)) continue;
+    var got = state.assignments.filter(function (a) { return a.reqId === q.id && (a.status === 'active' || a.status === 'vacated' || a.status === 'external'); }).length;
+    if (got < q.count) return q.apt;
+  }
+  return 0;
+}
+// רשימת הזמנים של חניה שנמסרה: מי קיבל כל טווח, ואילו טווחים עדיין פנויים. מתחילה מעכשיו
+function timelineHtml(o, used) {
+  if (!used.length) return '';
+  var now = Date.now(), start = Math.max(o.from, now);
+  var segs = used.map(function (x) {
+    return { from: Math.max(x.r.from, start), to: Math.min(x.r.to, o.to), apt: x.r.apt };
+  }).filter(function (g) { return g.to > g.from; }).sort(function (a, b) { return a.from - b.from; });
+  var rows = [], t = start;
+  segs.forEach(function (g) {
+    if (g.from - t >= 60000) rows.push({ from: t, to: g.from });
+    rows.push(g);
+    t = Math.max(t, g.to);
+  });
+  if (o.to - t >= 60000) rows.push({ from: t, to: o.to });
+  return '<div class="tl">' + rows.map(function (g) {
+    return '<div class="tl-row"><span>' + rangeLabel(g.from, g.to) + '</span>' +
+      (g.apt ? '<span class="pill ok">דירה ' + g.apt + '</span>' : '<span class="pill free">פנויה</span>') + '</div>';
+  }).join('') + '</div>';
+}
+function extHtml(a) {
+  return '<span class="ext">' + esc(a.spot) + ' <small>מחוץ לאפליקציה' + (a.fromApt ? ' · מדירה ' + a.fromApt : '') + '</small></span>';
+}
+function whoHtml(x) { return x.name ? ' · <span class="who">' + esc(x.name) + '</span>' : ''; }
+function telHref(p) { return 'tel:' + String(p).replace(/[^\d+]/g, ''); }
+function telHtml(p) { return p ? '<a class="tel" href="' + telHref(p) + '" target="_top">' + esc(prettyPhone(p)) + '</a> · ' : ''; }
+function prettyPhone(p) {
+  p = String(p);
+  if (/^\+972\d{8,9}$/.test(p)) p = '0' + p.slice(4);
+  return /^0\d{9}$/.test(p) ? p.slice(0, 3) + '-' + p.slice(3) : p;
+}
+function callBtn(p) { return p ? '<a class="call" href="' + telHref(p) + '" target="_top">התקשר</a>' : ''; }
+
+function noteHtml(r, waiting) {
+  if (!r.note) return '';
+  return '<div class="note' + (waiting ? ' waiting' : '') + '">' + esc(r.note) + '</div>';
+}
+
+function renderMine(byReq, byOff, reqById) {
+  var myReqs = state.requests.filter(function (r) { return r.mine; }).sort(function (x, y) { return x.from - y.from; });
+  var myOffs = state.offers.filter(function (o) { return o.mine; }).sort(function (x, y) { return x.from - y.from; });
+  $('mineCard').hidden = !myReqs.length && !myOffs.length;
+  $('mineTitle').textContent = apt ? 'שלי · דירה ' + apt : 'שלי';
+  var html = myReqs.map(function (r) {
+    var got = byReq[r.id] || [];
+    var gone = vacByReq[r.id] || [];
+    var ext = extByReq[r.id] || [];
+    var need = r.count - got.length - gone.length - ext.length;
+    var pos = state.requests.filter(function (x) { return x.createdAt < r.createdAt && x.from < r.to && x.to > r.from; }).length + 1;
+    var tags = gone.map(function (a) { return '<span class="pill gone">' + esc(a.spot) + ' פונתה</span>'; }).join('');
+    if (need > 0) tags += '<span class="pill wait">' + (got.length || gone.length || ext.length ? 'עוד ' + need : 'ממתין') + '</span>';
+    var exts = ext.map(function (a) {
+      return '<div class="vacate-row">' + extHtml(a) + '<span style="flex:1"></span>' +
+        '<button class="ext-x" type="button" data-ext-remove="' + a.id + '">הסר</button></div>';
+    }).join('');
+    var extForm = extOpen === r.id ? '<div class="ext-form"><div style="font-weight:500;font-size:13px;margin-bottom:8px">איזו חניה קיבלת?</div>' +
+      '<div class="row2"><div><label for="extSpot">מספר חניה <span class="req-star">*</span></label><input type="text" id="extSpot" inputmode="numeric" maxlength="10"></div>' +
+      '<div><label for="extFrom">מאיזו דירה · רשות</label><input type="number" id="extFrom" inputmode="numeric" min="1" max="51"></div></div>' +
+      '<div class="err" id="extErr" role="alert"></div>' +
+      '<div class="form-actions" style="margin-top:8px"><button class="submit" type="button" data-ext-save="' + r.id + '" style="height:42px">שמור</button>' +
+      '<button class="ghost" type="button" data-ext-close="1" style="height:42px">סגור</button></div></div>' : '';
+    var spots = got.map(function (a) {
+      var o = state.offers.filter(function (x) { return x.id === a.offerId; })[0];
+      var from = o ? 'מסר: ' + (o.name ? esc(o.name) + ', ' : '') + 'דירה ' + o.apt : 'החניה שקיבלת';
+      return '<div class="vacate-row"><span class="bay">' + esc(a.spot) + '</span><span style="flex:1;font-size:13px">' + from + '</span>' +
+        (o ? callBtn(o.phone) : '') +
+        '<button class="vacate" type="button" data-vacate="' + a.id + '">פיניתי</button></div>';
+    }).join('');
+    return '<div class="item"><div class="main"><div>בקשה' + (r.count > 1 ? ' · ' + r.count + ' חניות' : '') +
+      '</div><div class="muted">' + rangeLabel(r.from, r.to) + (need > 0 ? ' · מקום ' + pos + ' בתור' : '') +
+      '</div>' + noteHtml(r, need > 0) + (tags ? '<div class="tags" style="justify-content:flex-start;margin-top:6px">' + tags + '</div>' : '') + spots + exts + '</div>' +
+      '<div class="tags"><button class="vacate" type="button" data-edit-req="' + r.id + '">ערוך</button>' +
+      (extOpen === r.id ? '' : '<button class="vacate" type="button" data-ext-open="' + r.id + '">קיבלתי מחוץ לאפליקציה</button>') +
+      '<button class="cancel" type="button" data-cancel-req="' + r.id + '">בטל</button></div>' + (extForm ? '<div style="flex-basis:100%">' + extForm + '</div>' : '') + '</div>';
+  }).concat(myOffs.map(function (o) {
+    var used = (byOff[o.id] || []).map(function (a) { return reqById[a.reqId]; }).filter(Boolean);
+    var takers = used.map(function (r) {
+      return '<div class="vacate-row"><span style="flex:1;font-size:13px">קיבל: ' + (r.name ? esc(r.name) + ', ' : '') + 'דירה ' + r.apt + '</span>' + callBtn(r.phone) + '</div>';
+    }).join('');
+    return '<div class="item"><span class="bay">' + esc(o.spot) + '</span><div class="main"><div>מסירה</div><div class="muted">' +
+      rangeLabel(o.from, o.to) + (used.length ? '' : ' · עדיין פנויה') +
+      '</div>' + timelineHtml(o, used.map(function (r) { return { r: r }; })) + takers + '</div><div class="tags"><button class="vacate" type="button" data-edit-off="' + o.id + '">ערוך</button>' +
+      '<button class="cancel" type="button" data-cancel-off="' + o.id + '">בטל</button></div></div>';
+  })).join('');
+  var keepSpot = $('extSpot') ? $('extSpot').value : '', keepFrom = $('extFrom') ? $('extFrom').value : '';
+  var typing = extOpen && document.activeElement && document.activeElement.tagName === 'INPUT' && $('mineList').contains(document.activeElement);
+  if (typing) return; // לא מרעננים בזמן שהדייר מקליד בטופס
+  $('mineList').innerHTML = html;
+  if ($('extSpot')) { $('extSpot').value = keepSpot; $('extFrom').value = keepFrom; }
+}
+
+function dismissed() { try { return JSON.parse(store.get('parkingDismissed') || '[]'); } catch (e) { return []; } }
+function renderAlerts() {
+  var gone = dismissed();
+  var mineIds = {}; state.requests.forEach(function (r) { if (r.mine) mineIds[r.id] = r; });
+  var list = state.assignments.filter(function (a) { return a.status === 'revoked' && mineIds[a.reqId] && gone.indexOf(a.id) < 0; });
+  $('alerts').innerHTML = list.map(function (a) {
+    return '<div class="alert" role="status"><div><div style="font-weight:700">החניה שקיבלת בוטלה</div><div style="font-size:14px">חניה ' +
+      esc(a.spot) + ' בוטלה ע״י מי שמסר אותה. חזרת למקום המקורי שלך בתור, ותקבל את החניה הבאה שמתאימה.</div></div>' +
+      '<button class="x" type="button" data-dismiss="' + a.id + '" aria-label="סגור">×</button></div>';
+  }).join('');
+}
+
+// בלי הגבלה, חוץ מבקשה נעולה: מישהו ביקש אחריה, אז אפשר רק להפחית
+function maxCount() {
+  return editReq && editReq.locked ? editReq.count : 999;
+}
+function renderCount() {
+  var max = maxCount();
+  $('reqCount').textContent = reqCount;
+  $('cntMinus').disabled = reqCount <= 1;
+  $('cntPlus').disabled = reqCount >= max;
+}
+
+// ---------- התקנה, התראות וקוד העברה ----------
+var deferredPrompt = null, xferCode = null, OS = null;
+function isStandalone() { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
+function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+// באייפון התראות עובדות רק מהאפליקציה המותקנת. באנדרואיד גם מהדפדפן
+function pushPossible() { return !!(CONFIG.ONESIGNAL_APP_ID && 'Notification' in window && 'serviceWorker' in navigator && (isStandalone() || !isIOS())); }
+// באייפון, האפליקציה המותקנת לא רואה את מה שנשמר בדפדפן, ולכן רק שם מציעים קוד העברה
+function needsCode() { return isStandalone() && isIOS(); }
+function perm() { return window.Notification ? Notification.permission : 'unsupported'; }
+function step(n, t) { return '<div class="app-step"><b>' + n + '</b><span>' + t + '</span></div>'; }
+
+function renderAppCard() {
+  var parts = [];
+  var first = Number(store.get('parkingFirstOpen')) || 0;
+  if (needsCode() && apt && !store.get('parkingXferDone') && !store.get('parkingXferHide') && Date.now() - first < 7 * 86400000) {
+    parts.push('<div class="xfer-tip"><span class="ic" aria-hidden="true">⇄</span><div><h2 style="margin:0">השתמשת בעבר באפליקציה בדפדפן?</h2>' +
+      '<div class="muted">עם קוד העברה, הבקשות והמסירות שלך יופיעו גם כאן.</div></div></div>' +
+      '<div class="app-actions"><button class="submit" type="button" data-app="xfercode">הזנת קוד העברה</button>' +
+      '<button class="ghost" type="button" data-app="xferhide">לא צריך</button></div>');
+  }
+  if (!isStandalone() && !store.get('parkingInstallHide')) {
+    if (isIOS()) {
+      parts.push('<h2>התקנת האפליקציה</h2><div class="muted">כך היא תיפתח במסך מלא, ותוכל לקבל התראה כשתקבל חניה.</div><div class="app-steps">' +
+        step(1, 'לוחצים על כפתור השיתוף, הריבוע עם החץ למעלה') + step(2, 'בוחרים "הוסף למסך הבית" ואז "הוסף"') +
+        step(3, 'פותחים מהאייקון ומזינים את קוד ההעברה') + '</div>' +
+        (xferCode ? '<div class="code-big">' + xferCode + '</div><div class="muted" style="text-align:center">קוד ההעברה שלך · תקף 15 דקות</div>'
+          : '<div class="muted" style="margin-top:8px">באייפון, האפליקציה המותקנת לא רואה את מה שנשמר בדפדפן. קוד ההעברה מעביר אליה את הבקשות, המסירות והפרטים שלך.</div>') +
+        '<div class="app-actions">' + (xferCode ? '' : '<button class="submit" type="button" data-app="code">קבלת קוד העברה</button>') +
+        '<button class="ghost" type="button" data-app="hide">' + (xferCode ? 'סגור' : 'לא עכשיו') + '</button></div>');
+    } else {
+      parts.push('<h2>התקנת האפליקציה</h2><div class="muted">' +
+        (deferredPrompt ? 'אייקון במסך הבית, מסך מלא, והתראה כשתקבל חניה.' : 'בתפריט של הדפדפן, שלוש הנקודות, בוחרים "התקנת אפליקציה" או "הוספה למסך הבית".') +
+        '</div><div class="app-actions">' + (deferredPrompt ? '<button class="submit" type="button" data-app="install">התקנה</button>' : '') +
+        '<button class="ghost" type="button" data-app="hide">לא עכשיו</button></div>');
+    }
+  }
+  if (pushPossible() && perm() === 'default' && !store.get('parkingPushHide')) {
+    parts.push('<h2>קבלת התראות</h2><div class="muted">נשלח לך התראה כשתקבל חניה, עם המספר והשעות.</div>' +
+      '<div class="app-actions"><button class="submit" type="button" data-app="push">הפעלת התראות</button>' +
+      '<button class="ghost" type="button" data-app="pushhide">לא עכשיו</button></div>');
+  }
+  $('appCard').innerHTML = parts.join('<div style="height:16px"></div>');
+  $('appCard').hidden = !parts.length;
+  renderFoot();
+}
+function renderFoot() {
+  var bits = [];
+  if (CONFIG.ONESIGNAL_APP_ID && perm() === 'granted') bits.push('התראות פעילות · <button type="button" data-app="test">שליחת התראת בדיקה</button>');
+  else if (pushPossible() && perm() === 'denied') bits.push('ההתראות חסומות. אפשר להפעיל אותן בהגדרות הטלפון.');
+  else if (pushPossible() && perm() === 'default' && store.get('parkingPushHide')) bits.push('<button type="button" data-app="push">הפעלת התראות</button>');
+  if (!isStandalone() && isIOS() && store.get('parkingInstallHide')) bits.push('<button type="button" data-app="code">קוד העברה לאפליקציה המותקנת</button>');
+  $('foot').innerHTML = bits.join('<br>');
+}
+function enablePush() {
+  if (!OS) { notify({ kind: 'err', title: 'ההתראות עוד נטענות', sub: 'נסה שוב בעוד כמה שניות' }); return; }
+  OS.Notifications.requestPermission().then(function () { return OS.login(device); }).then(function () {
+    store.set('parkingPushHide', '');
+    renderAppCard();
+    if (perm() === 'granted') notify({ kind: 'ok', title: 'ההתראות הופעלו', sub: 'נשלח לך התראה כשתקבל חניה' });
+  }).catch(function () { renderAppCard(); });
+}
+function appAction(a, btn) {
+  if (a === 'xfercode') showOverlay('code');
+  if (a === 'xferhide') { store.set('parkingXferHide', '1'); renderAppCard(); }
+  if (a === 'hide') { store.set('parkingInstallHide', '1'); renderAppCard(); }
+  if (a === 'pushhide') { store.set('parkingPushHide', '1'); renderAppCard(); }
+  if (a === 'push') enablePush();
+  if (a === 'install' && deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function () { deferredPrompt = null; renderAppCard(); });
+  }
+  if (a === 'code') {
+    store.set('parkingInstallHide', '');
+    btn.disabled = true;
+    call('createTransfer', profile()).then(function (r) {
+      xferCode = r.code; renderAppCard();
+      $('appCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }).catch(function (x) { btn.disabled = false; notify({ kind: 'err', title: 'לא הצלחתי ליצור קוד', sub: errMsg(x) }); });
+  }
+  if (a === 'test') {
+    btn.disabled = true;
+    call('testPush', device).then(function (r) {
+      btn.disabled = false;
+      if (r.ok) notify({ kind: 'ok', title: 'נשלחה התראת בדיקה', sub: 'היא אמורה להגיע תוך כמה שניות' });
+      else notify({ kind: 'err', title: 'ההתראה לא נשלחה', sub: 'נסה לסגור ולפתוח את האפליקציה, ולבדוק שההתראות מופעלות בהגדרות הטלפון' });
+    }).catch(function (x) { btn.disabled = false; notify({ kind: 'err', title: 'ההתראה לא נשלחה', sub: errMsg(x) }); });
+  }
+}
+window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferredPrompt = e; renderAppCard(); });
+window.addEventListener('appinstalled', function () { deferredPrompt = null; store.set('parkingInstallHide', '1'); renderAppCard(); });
+
+// התראות דרך OneSignal. מזהה הטלפון באפליקציה משמש גם לזיהוי בהתראות
+window.OneSignalDeferred = window.OneSignalDeferred || [];
+if (CONFIG.ONESIGNAL_APP_ID) OneSignalDeferred.push(function (OneSignal) {
+  var scope = location.pathname.replace(/[^\/]*$/, '');
+  return OneSignal.init({ appId: CONFIG.ONESIGNAL_APP_ID, serviceWorkerPath: scope.slice(1) + 'OneSignalSDKWorker.js', serviceWorkerParam: { scope: scope } })
+    .then(function () {
+      OS = OneSignal;
+      OneSignal.Notifications.addEventListener('permissionChange', function () { renderAppCard(); });
+      return OneSignal.login(device);
+    })
+    .then(renderAppCard)
+    .catch(function (e) { console.warn('OneSignal', e); });
+});
+
+// ---------- הודעות ----------
+var toastTimer = null, groupMsg = '';
+// הודעה בתחתית המסך. kind: ok / err / רגיל. pending: עיגול מסתובב עד שהשרת מאשר.
+// group: הודעה מוכנה לקבוצה. בלחיצה היא מועתקת והקבוצה נפתחת, והדייר רק מדביק ושולח
+function notify(o) {
+  var t = $('toast');
+  t.className = 'toast show' + (o.kind ? ' ' + o.kind : '');
+  $('toastIcon').textContent = o.kind === 'ok' ? '✓' : o.kind === 'err' ? '!' : '';
+  $('toastText').textContent = o.title || '';
+  var sub = $('toastSub');
+  sub.innerHTML = o.pending ? '<span class="spin"></span>' + esc(o.sub || 'מעדכן…') : esc(o.sub || '');
+  groupMsg = o.group || '';
+  $('toastGo').hidden = !groupMsg;
+  clearTimeout(toastTimer);
+  if (!o.pending) toastTimer = setTimeout(function () { t.classList.remove('show'); }, groupMsg ? 15000 : o.kind === 'err' ? 8000 : 5000);
+}
+function toast(text, msg) { notify({ title: text, group: msg }); }
+function copyText(text) {
+  var ok = false;
+  try {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'absolute'; ta.style.top = '-1000px';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+  } catch (e) {}
+  if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).catch(function () {}); ok = true; }
+  return ok;
+}
+$('toastGo').onclick = function () {
+  if (!groupMsg) return;
+  if (!copyText(groupMsg)) window.prompt('העתק את ההודעה והדבק בקבוצה:', groupMsg);
+  $('toastText').textContent = 'ההודעה הועתקה. בקבוצה: לחיצה ארוכה, הדבק ושלח.';
+};
+$('toastX').onclick = function () { $('toast').classList.remove('show'); };
+
+// ---------- טעינה ----------
+function refresh() {
+  if (pending > 0) return Promise.resolve();
+  return call('getState', device).then(function (s) { state = s; render(); })
+    .catch(function (x) { if (!state) $('queueList').innerHTML = '<div class="empty">לא הצלחתי לטעון. ' + esc(errMsg(x)) + '</div>'; });
+}
+// שליחה ברקע: המסך כבר התעדכן, וכשהשרת עונה מגיע המצב האמיתי
+function run(fn, arg) {
+  pending++;
+  return call(fn, arg).then(function (s) { pending--; state = s; render(); return s; },
+    function (e) { pending--; refresh(); throw e; });
+}
+function myPlace(s, reqId) {
+  var r = s.requests.filter(function (x) { return x.id === reqId; })[0];
+  if (!r) return '';
+  var spots = s.assignments.filter(function (a) { return a.status === 'active' && a.reqId === r.id; }).map(function (a) { return a.spot; });
+  if (spots.length) return 'קיבלת חניה ' + spots.join(', ');
+  var pos = s.requests.filter(function (x) { return x.createdAt < r.createdAt && x.from < r.to && x.to > r.from; }).length + 1;
+  return 'נכנסת לתור במקום ' + pos;
+}
+
+// ---------- דירה ----------
+// חלון הדירה: פתיחה (רק באייפון באפליקציה המותקנת), מספר דירה, או קוד העברה
+function showOverlay(mode) {
+  $('welcomeBox').hidden = mode !== 'welcome';
+  $('aptBox').hidden = mode !== 'apt';
+  $('xferBox').hidden = mode !== 'code';
+  $('aptInput').value = apt || ''; $('aptErr').textContent = '';
+  $('xferErr').textContent = ''; $('copyLink').textContent = 'העתקת הקישור';
+  $('aptOverlay').classList.add('show');
+  if (mode === 'apt') setTimeout(function () { $('aptInput').focus(); }, 50);
+}
+function askApt() {
+  showOverlay(needsCode() && !apt && !store.get('parkingWelcomed') ? 'welcome' : 'apt');
+}
+$('aptBtn').onclick = askApt;
+$('aptInput').oninput = function () { $('aptErr').textContent = ''; };
+$('aptForm').onsubmit = function (e) {
+  e.preventDefault();
+  var n = Math.floor(Number($('aptInput').value));
+  if (!(n >= 1 && n <= APTS)) { $('aptErr').textContent = 'הכנס מספר דירה בין 1 ל־' + APTS; return; }
+  apt = n; store.set('parkingApt', String(n));
+  $('aptOverlay').classList.remove('show');
+  render(); renderAppCard();
+};
+function needApt() { if (!apt) { askApt(); return true; } return false; }
+
+// קוד העברה: מקבלים את הזיהוי מהדפדפן, וממשיכים עם אותן בקשות ומסירות
+$('welcomeCode').onclick = function () { store.set('parkingWelcomed', '1'); showOverlay('code'); };
+$('welcomeNew').onclick = function () { store.set('parkingWelcomed', '1'); showOverlay('apt'); };
+$('xferBack').onclick = function () { if (apt) $('aptOverlay').classList.remove('show'); else askApt(); };
+$('copyLink').onclick = function () {
+  var link = location.origin + location.pathname;
+  if (copyText(link)) this.textContent = 'הקישור הועתק ✓'; else window.prompt('העתק את הקישור והדבק בדפדפן:', link);
+};
+$('xferInput').oninput = function () { $('xferErr').textContent = ''; };
+$('xferGo').onclick = function () {
+  var b = this, code = $('xferInput').value.replace(/\D/g, '');
+  if (code.length !== 6) { $('xferErr').textContent = 'הקוד הוא 6 ספרות'; return; }
+  b.disabled = true;
+  call('redeemTransfer', code).then(function (m) {
+    if (!applyProfile(m)) throw new Error('הקוד לא תקין');
+    b.disabled = false;
+    device = store.get('parkingDevice'); apt = Number(store.get('parkingApt')) || 0;
+    if (OS) OS.login(device);
+    $('xferInput').value = ''; store.set('parkingXferDone', '1');
+    $('aptOverlay').classList.remove('show');
+    notify({ kind: 'ok', title: 'הפרטים הועברו', sub: apt ? 'דירה ' + apt + ' · הבקשות והמסירות שלך כאן' : '' });
+    renderAppCard();
+    return refresh().then(function () { if (!apt) showOverlay('apt'); });
+  }).catch(function (x) { b.disabled = false; $('xferErr').textContent = errMsg(x); });
+};
+
+// ---------- ימים ----------
+var dayBtns = document.querySelectorAll('.day[data-off]');
+for (var i = 0; i < dayBtns.length; i++) dayBtns[i].onclick = function () { dayOffset = Number(this.dataset.off); pickedDay = null; $('dayPick').value = ''; render(); };
+$('dayPick').onchange = function () {
+  if (!this.value) { pickedDay = null; render(); return; }
+  var p = this.value.split('-'); pickedDay = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  render();
+};
+
+// ---------- טפסים ----------
+// ---------- שם וטלפון ----------
+// נשמרים בטלפון אחרי השליחה הראשונה, וממולאים לבד בפעם הבאה
+function fillPerson(pre, rec) {
+  var first = store.get('parkingFirst') || '', last = store.get('parkingLast') || '', phone = store.get('parkingPhone') || '';
+  if (rec && rec.name) { var i = rec.name.indexOf(' '); first = i > 0 ? rec.name.slice(0, i) : rec.name; last = i > 0 ? rec.name.slice(i + 1) : ''; }
+  if (rec && rec.phone) phone = prettyPhone(rec.phone);
+  $(pre + 'First').value = first; $(pre + 'Last').value = last; $(pre + 'Phone').value = phone;
+}
+function readPerson(pre) {
+  var p = { first: $(pre + 'First').value.trim(), last: $(pre + 'Last').value.trim(), phone: $(pre + 'Phone').value.trim() };
+  if (!p.first) return { err: 'צריך למלא שם פרטי' };
+  if (p.phone && !/^(\+972|0)\d{8,9}$/.test(p.phone.replace(/[^\d+]/g, ''))) return { err: 'מספר הטלפון לא תקין' };
+  store.set('parkingFirst', p.first); store.set('parkingLast', p.last); store.set('parkingPhone', p.phone);
+  return p;
+}
+
+function defaults() {
+  var day = selectedDay();
+  var today = startOfDay(new Date()).getTime() === day.getTime();
+  var from = today ? new Date() : new Date(day.getTime() + 8 * 3600000);
+  from.setSeconds(0, 0);
+  var to = new Date(day); to.setHours(23, 59, 0, 0);
+  return [from.getTime(), to.getTime()];
+}
+function openForm(id) {
+  if (needApt()) return;
+  var d = defaults();
+  $('reqForm').hidden = id !== 'reqForm';
+  $('offForm').hidden = id !== 'offForm';
+  fillPerson(id === 'reqForm' ? 'req' : 'off', null);
+  if (id === 'reqForm') { reqCount = 1; renderCount(); $('reqFrom').value = toInput(d[0]); $('reqTo').value = toInput(d[1]); $('reqNote').value = ''; $('reqNoteCount').textContent = '0/80'; $('reqErr').textContent = ''; fixWindow('reqFrom', 'reqTo'); }
+  else { $('offSpot').value = store.get('parkingSpot') || ''; $('offFrom').value = toInput(d[0]); $('offTo').value = toInput(d[1]); $('offErr').textContent = ''; fixWindow('offFrom', 'offTo'); }
+  setMode(null, null);
+  $('reqLock').hidden = true;
+  $(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function setMode(r, o) {
+  editReq = r; editOff = o;
+  $('reqTitle').textContent = r ? 'עריכת בקשה' : 'בקשת חניה';
+  $('reqSubmit').textContent = r ? 'שמור שינויים' : 'הכנס אותי לתור';
+  $('reqClose').textContent = r ? 'ביטול עריכה' : 'סגור';
+  $('offTitle').textContent = o ? 'עריכת מסירה' : 'מסירת חניה';
+  $('offSubmit').textContent = o ? 'שמור שינויים' : 'מסור חניה';
+  $('offClose').textContent = o ? 'ביטול עריכה' : 'סגור';
+  renderCount();
+}
+function openEditReq(r) {
+  $('offForm').hidden = true; $('reqForm').hidden = false;
+  setMode(r, null);
+  fillPerson('req', r);
+  reqCount = r.count; renderCount();
+  $('reqLock').hidden = !r.locked;
+  if (r.locked) $('reqLockText').textContent = 'מישהו כבר ביקש אחריך, אז אי אפשר להוסיף חניות לבקשה הזו. אפשר רק להפחית, או ליצור בקשה נוספת.';
+  $('reqFrom').value = toInput(Math.max(r.from, Date.now() - 60000));
+  $('reqTo').value = toInput(r.to);
+  $('reqNote').value = r.note || ''; $('reqNoteCount').textContent = (r.note || '').length + '/80';
+  $('reqErr').textContent = '';
+  fixWindow('reqFrom', 'reqTo');
+  $('reqForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function openEditOff(o) {
+  $('reqForm').hidden = true; $('offForm').hidden = false;
+  setMode(null, o);
+  fillPerson('off', o);
+  $('offSpot').value = o.spot;
+  $('offFrom').value = toInput(o.from);
+  $('offTo').value = toInput(o.to);
+  $('offErr').textContent = '';
+  fixWindow('offFrom', 'offTo');
+  $('offForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+$('openReq').onclick = function () { openForm('reqForm'); };
+$('openOff').onclick = function () { openForm('offForm'); };
+document.querySelectorAll('[data-close]').forEach(function (b) { b.onclick = function () { $(b.dataset.close).hidden = true; setMode(null, null); }; });
+['reqFirst', 'reqLast', 'reqPhone'].forEach(function (id) { $(id).oninput = function () { $('reqErr').textContent = ''; }; });
+['offFirst', 'offLast', 'offPhone'].forEach(function (id) { $(id).oninput = function () { $('offErr').textContent = ''; }; });
+['reqFrom', 'reqTo'].forEach(function (id) {
+  $(id).oninput = function () { $('reqErr').textContent = ''; };
+  $(id).onchange = function () { fixWindow('reqFrom', 'reqTo'); };
+});
+$('reqNote').oninput = function () { $('reqNoteCount').textContent = this.value.length + '/80'; };
+['offSpot', 'offFrom', 'offTo'].forEach(function (id) { $(id).oninput = function () { $('offErr').textContent = ''; }; });
+['offFrom', 'offTo'].forEach(function (id) { $(id).onchange = function () { fixWindow('offFrom', 'offTo'); }; });
+
+// בקשה נוספת: טופס חדש עם אותם זמנים ופרטים, שנכנס לסוף התור
+$('reqMore').onclick = function () {
+  var f = $('reqFrom').value, t = $('reqTo').value, n = $('reqNote').value;
+  setMode(null, null); $('reqLock').hidden = true;
+  reqCount = 1; renderCount();
+  $('reqFrom').value = f; $('reqTo').value = t; $('reqNote').value = n; $('reqNoteCount').textContent = n.length + '/80';
+  $('reqErr').textContent = '';
+  $('reqForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+$('cntMinus').onclick = function () { if (reqCount > 1) { reqCount--; renderCount(); } };
+$('cntPlus').onclick = function () { if (state && reqCount < maxCount()) { reqCount++; renderCount(); } };
+
+// אם עד מתי קרוב מדי, מתקן אותו בשקט לחצי שעה אחרי מתי, ולא פחות מחצי שעה מעכשיו
+function fixWindow(fromId, toId) {
+  var from = fromInput($(fromId).value), to = fromInput($(toId).value);
+  if (!from) return;
+  var min = Math.ceil((Math.max(from, Date.now()) + MIN_MS) / 60000) * 60000;
+  if (!to || to < min) $(toId).value = toInput(min);
+}
+function checkWindow(from, to) {
+  if (!from || !to) return 'צריך למלא מתי ועד מתי';
+  return '';
+}
+
+$('reqForm').onsubmit = function (e) {
+  e.preventDefault();
+  fixWindow('reqFrom', 'reqTo');
+  var from = fromInput($('reqFrom').value), to = fromInput($('reqTo').value);
+  var err = checkWindow(from, to);
+  if (err) { $('reqErr').textContent = err; return; }
+  var who = readPerson('req');
+  if (who.err) { $('reqErr').textContent = who.err; return; }
+  var note = $('reqNote').value.trim().slice(0, 80);
+  var wasEdit = editReq;
+  var call1 = wasEdit
+    ? run('editRequest', { device: device, id: wasEdit.id, count: reqCount, from: from, to: to, note: note, first: who.first, last: who.last, phone: who.phone })
+    : run('addRequest', { device: device, apt: apt, count: reqCount, from: from, to: to, note: note, first: who.first, last: who.last, phone: who.phone });
+  // תגובה מיידית: הטופס נסגר וההודעה מופיעה, השרת מאשר ברקע
+  $('reqForm').hidden = true;
+  var title = wasEdit ? 'השינויים נשמרו' : 'הבקשה התקבלה';
+  notify({ kind: 'ok', title: title, pending: true });
+  call1.then(function (s) {
+    setMode(null, null);
+    notify({ kind: 'ok', title: title, sub: (wasEdit ? 'המקום בתור נשמר · ' : '') + myPlace(s, s.result) });
+  }).catch(function (x) {
+    $('reqForm').hidden = false; setMode(wasEdit, null); reqCount = Math.max(1, reqCount); renderCount();
+    $('reqErr').textContent = errMsg(x);
+    notify({ kind: 'err', title: wasEdit ? 'השינויים לא נשמרו' : 'הבקשה לא נשמרה', sub: errMsg(x) + ' הטופס נפתח שוב.' });
+  });
+};
+
+$('offForm').onsubmit = function (e) {
+  e.preventDefault();
+  var spot = $('offSpot').value.trim();
+  fixWindow('offFrom', 'offTo');
+  var from = fromInput($('offFrom').value), to = fromInput($('offTo').value);
+  if (!spot) { $('offErr').textContent = 'צריך למלא מספר חניה'; return; }
+  var err = checkWindow(from, to);
+  if (err) { $('offErr').textContent = err; return; }
+  var who2 = readPerson('off');
+  if (who2.err) { $('offErr').textContent = who2.err; return; }
+  store.set('parkingSpot', spot);
+  var oldOff = editOff;
+  var call2 = oldOff
+    ? run('editOffer', { device: device, id: oldOff.id, spot: spot, from: from, to: to, first: who2.first, last: who2.last, phone: who2.phone })
+    : run('addOffer', { device: device, apt: apt, spot: spot, from: from, to: to, first: who2.first, last: who2.last, phone: who2.phone });
+  $('offForm').hidden = true;
+  var title2 = oldOff ? 'השינויים נשמרו' : 'המסירה התקבלה. תודה!';
+  notify({ kind: 'ok', title: title2, pending: true });
+  call2.then(function (s) {
+    setMode(null, null);
+    var users = s.assignments.filter(function (a) { return a.status === 'active' && a.offerId === s.result; })
+      .map(function (a) { var r = s.requests.filter(function (x) { return x.id === a.reqId; })[0]; return r ? r.apt : null; })
+      .filter(Boolean);
+    var sub = users.length ? 'חניה ' + spot + ' שובצה לדירה ' + users.join(', ') : 'חניה ' + spot + ' פנויה וממתינה לבקשה';
+    var hit = oldOff && s.assignments.some(function (a) { return a.offerId === oldOff.id && a.status === 'revoked' && a.changedAt >= s.now - 60000; });
+    notify({ kind: 'ok', title: title2, sub: sub,
+      group: hit ? 'דירה ' + apt + ': עדכנתי את מסירת חניה ' + oldOff.spot + '. מי שקיבל אותה וכבר לא נכנס בזמנים חזר למקומו בתור באפליקציה.' : '' });
+  }).catch(function (x) {
+    $('offForm').hidden = false; setMode(null, oldOff);
+    $('offErr').textContent = errMsg(x);
+    notify({ kind: 'err', title: oldOff ? 'השינויים לא נשמרו' : 'המסירה לא נשמרה', sub: errMsg(x) + ' הטופס נפתח שוב.' });
+  });
+};
+
+// ---------- ביטולים ----------
+document.addEventListener('click', function (e) {
+  var t = e.target.closest('button'); if (!t) return;
+  if (t.dataset.app) { appAction(t.dataset.app, t); return; }
+  if (t.dataset.cancelReq) {
+    var r = state.requests.filter(function (x) { return x.id === t.dataset.cancelReq; })[0];
+    if (!r || !confirm('לבטל את הבקשה ' + rangeLabel(r.from, r.to) + '?')) return;
+    var had = state.assignments.filter(function (a) { return a.status === 'active' && a.reqId === r.id; }).map(function (a) { return a.spot; });
+    state.requests = state.requests.filter(function (x) { return x.id !== r.id; }); render();
+    notify({ title: 'הבקשה בוטלה', pending: true });
+    run('cancelRequest', { device: device, id: r.id }).then(function () {
+      notify({ kind: 'ok', title: 'הבקשה בוטלה',
+        group: had.length ? 'דירה ' + apt + ': ביטלתי את בקשת החניה שלי (' + rangeLabel(r.from, r.to) + '). חניה ' + had.join(', ') + ' עוברת לבא בתור באפליקציה.' : '' });
+    }).catch(function (x) { notify({ kind: 'err', title: 'הביטול לא נשמר', sub: errMsg(x) }); });
+  }
+  if (t.dataset.cancelOff) {
+    var o = state.offers.filter(function (x) { return x.id === t.dataset.cancelOff; })[0];
+    if (!o || !confirm('לבטל את מסירת חניה ' + o.spot + '?')) return;
+    var used = state.assignments.some(function (a) { return a.status === 'active' && a.offerId === o.id; });
+    state.offers = state.offers.filter(function (x) { return x.id !== o.id; }); render();
+    notify({ title: 'המסירה בוטלה', pending: true });
+    run('cancelOffer', { device: device, id: o.id }).then(function () {
+      notify({ kind: 'ok', title: 'המסירה בוטלה',
+        group: used ? 'דירה ' + apt + ': ביטלתי את מסירת חניה ' + o.spot + ' (' + rangeLabel(o.from, o.to) + '). מי שקיבל אותה חזר למקומו בתור באפליקציה.' : '' });
+    }).catch(function (x) { notify({ kind: 'err', title: 'הביטול לא נשמר', sub: errMsg(x) }); });
+  }
+  if (t.dataset.editReq) {
+    var er = state.requests.filter(function (x) { return x.id === t.dataset.editReq; })[0];
+    if (er) openEditReq(er);
+  }
+  if (t.dataset.editOff) {
+    var eo = state.offers.filter(function (x) { return x.id === t.dataset.editOff; })[0];
+    if (eo) openEditOff(eo);
+  }
+  if (t.dataset.extOpen) {
+    extOpen = t.dataset.extOpen; render();
+    if ($('extSpot')) $('extSpot').focus();
+  }
+  if (t.dataset.extClose) { extOpen = null; render(); }
+  if (t.dataset.extSave) {
+    var spotX = $('extSpot').value.trim(), fromX = $('extFrom').value.trim();
+    if (!spotX) { $('extErr').textContent = 'צריך למלא מספר חניה'; return; }
+    if (fromX && !(Number(fromX) >= 1 && Number(fromX) <= APTS)) { $('extErr').textContent = 'מספר דירה בין 1 ל־' + APTS; return; }
+    var reqX = t.dataset.extSave;
+    extOpen = null; render();
+    notify({ kind: 'ok', title: 'חניה ' + spotX + ' נרשמה', pending: true });
+    run('reportExternal', { device: device, reqId: reqX, spot: spotX, fromApt: fromX }).then(function (s) {
+      var res = s.result || {};
+      if (res.dup) { notify({ title: 'חניה ' + spotX + ' כבר רשומה לך', sub: 'היא לא נספרה פעמיים' }); return; }
+      notify({ kind: 'ok', title: 'חניה ' + spotX + ' נרשמה',
+        sub: res.warn ? 'שים לב: חניה ' + spotX + ' משובצת באפליקציה גם לדירה ' + res.warn + '. כדאי לבדוק עם מי שמסר.' : 'מספר החניות שאתה מחכה להן עודכן' });
+    }).catch(function (x) {
+      extOpen = reqX; render();
+      if ($('extSpot')) { $('extSpot').value = spotX; $('extFrom').value = fromX; $('extErr').textContent = errMsg(x); }
+      notify({ kind: 'err', title: 'הדיווח לא נשמר', sub: errMsg(x) });
+    });
+  }
+  if (t.dataset.extRemove) {
+    var ea = state.assignments.filter(function (a) { return a.id === t.dataset.extRemove; })[0];
+    if (!ea || !confirm('להסיר את חניה ' + ea.spot + ' מהבקשה? תחזור לחכות לחניה במקומה.')) return;
+    ea.status = 'removed'; render();
+    notify({ title: 'הדיווח הוסר', pending: true });
+    run('removeExternal', { device: device, id: ea.id }).then(function () { notify({ kind: 'ok', title: 'הדיווח הוסר' }); })
+      .catch(function (x) { notify({ kind: 'err', title: 'ההסרה לא נשמרה', sub: errMsg(x) }); });
+  }
+  if (t.dataset.vacate) {
+    var va = state.assignments.filter(function (a) { return a.id === t.dataset.vacate; })[0];
+    if (!va || !confirm('פינית את חניה ' + va.spot + '? היא תחזור לחניות הפנויות.')) return;
+    va.status = 'vacated'; render();
+    notify({ kind: 'ok', title: 'חניה ' + va.spot + ' חזרה לחניות הפנויות. תודה!', pending: true });
+    run('vacateAssignment', { device: device, id: va.id }).then(function () {
+      notify({ kind: 'ok', title: 'חניה ' + va.spot + ' חזרה לחניות הפנויות. תודה!',
+        group: 'דירה ' + apt + ': פיניתי את חניה ' + va.spot + '. היא חזרה לחניות הפנויות באפליקציה.' });
+    }).catch(function (x) { notify({ kind: 'err', title: 'הפינוי לא נשמר', sub: errMsg(x) }); });
+  }
+  if (t.dataset.dismiss) {
+    var g = dismissed(); g.push(t.dataset.dismiss); store.set('parkingDismissed', JSON.stringify(g.slice(-50))); renderAlerts();
+  }
+});
+
+// ---------- הפעלה ----------
+$('ver').textContent = 'גרסה ' + VERSION;
+if (needsCode() && !store.get('parkingFirstOpen')) store.set('parkingFirstOpen', String(Date.now()));
+renderAppCard();
+refresh().then(function () { if (!apt) askApt(); });
+setInterval(function () { if (!document.hidden) refresh(); }, 20000);
+document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
+</script>
+</body>
+</html>
