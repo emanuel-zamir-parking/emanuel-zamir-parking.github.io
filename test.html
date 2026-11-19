@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ניהול חניה בבניין · עמנואל זמיר 8 · גרסה 3.3 · 19/11/2026 -->
+<!-- ניהול חניה בבניין · עמנואל זמיר 8 · גרסה 3.4 · 19/11/2026 -->
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
@@ -351,7 +351,7 @@ form.card input[type=text], form.card input[type=number], form.card input[type=d
 <script>
 var CONFIG = window.CONFIG || { API_URL: '', ONESIGNAL_APP_ID: '' };
 var APTS = 51;
-var VERSION = '3.3';
+var VERSION = '3.4';
 var editReq = null, editOff = null;
 var GROUP_URL = 'https://chat.whatsapp.com/LEOuJTs7H9wCfbiMCOFCmb';
 var MIN_MS = 30 * 60 * 1000;
@@ -732,15 +732,26 @@ function renderInstall() {
 }
 function renderFoot() {
   var bits = [];
-  if (CONFIG.ONESIGNAL_APP_ID && perm() === 'granted') bits.push('התראות פעילות · <button type="button" data-app="test">שליחת התראת בדיקה</button>');
+  if (CONFIG.ONESIGNAL_APP_ID && perm() === 'granted') {
+    bits.push('התראות פעילות · <button type="button" data-app="test">שליחת התראת בדיקה</button>');
+    bits.push('בקשות של שכנים: ' + (reqsOn() ? '<b style="color:var(--ok)">מופעל</b> · <button type="button" data-app="reqsoff">כיבוי</button>'
+      : '<b>כבוי</b> · <button type="button" data-app="reqson">הפעלה</button>'));
+  }
   else if (pushPossible() && perm() === 'denied') bits.push('ההתראות חסומות. אפשר להפעיל אותן בהגדרות הטלפון.');
   else if (pushPossible() && perm() === 'default' && store.get('parkingPushHide')) bits.push('<button type="button" data-app="push">הפעלת התראות</button>');
   if (!isStandalone() && store.get('parkingInstallHide')) bits.push('<button type="button" data-app="showinstall">התקנת האפליקציה</button>');
   $('foot').innerHTML = bits.join('<br>');
 }
+// תגיות ב-OneSignal: מזהה הטלפון (כדי שמי שביקש לא יקבל התראה על הבקשה של עצמו), והאם לקבל התראות על בקשות של שכנים
+function reqsOn() { return store.get('parkingReqsOff') !== '1'; }
+function pushTags() {
+  if (!OS) return Promise.resolve();
+  return OS.login(device).then(function () { return OS.User.addTags({ device: device, reqs: reqsOn() ? 'on' : 'off' }); })
+    .catch(function (e) { console.warn('OneSignal tags', e); });
+}
 function enablePush() {
   if (!OS) { notify({ kind: 'err', title: 'ההתראות עוד נטענות', sub: 'נסה שוב בעוד כמה שניות' }); return; }
-  OS.Notifications.requestPermission().then(function () { return OS.login(device); }).then(function () {
+  OS.Notifications.requestPermission().then(pushTags).then(function () {
     store.set('parkingPushHide', '');
     renderAppCard();
     if (perm() === 'granted') notify({ kind: 'ok', title: 'ההתראות הופעלו', sub: 'נשלח לך התראה כשתקבל חניה' });
@@ -763,6 +774,11 @@ function appAction(a, btn) {
       instStep = 1; renderInstall();
       $('installCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }).catch(function (x) { btn.disabled = false; notify({ kind: 'err', title: 'לא הצלחתי ליצור קוד', sub: errMsg(x) }); });
+  }
+  if (a === 'reqsoff' || a === 'reqson') {
+    store.set('parkingReqsOff', a === 'reqsoff' ? '1' : '');
+    pushTags(); renderFoot();
+    notify({ kind: 'ok', title: a === 'reqsoff' ? 'לא תקבל התראות על בקשות של שכנים' : 'תקבל התראה כששכן מבקש חניה', sub: a === 'reqsoff' ? 'התראה כשאתה מקבל חניה תמשיך להגיע' : '' });
   }
   if (a === 'instnext') { instStep++; renderInstall(); }
   if (a === 'instnextcopy') {
@@ -799,7 +815,7 @@ if (CONFIG.ONESIGNAL_APP_ID) OneSignalDeferred.push(function (OneSignal) {
     .then(function () {
       OS = OneSignal;
       OneSignal.Notifications.addEventListener('permissionChange', function () { renderAppCard(); });
-      return OneSignal.login(device);
+      return pushTags();
     })
     .then(renderAppCard)
     .catch(function (e) { console.warn('OneSignal', e); });
@@ -905,7 +921,7 @@ $('xferGo').onclick = function () {
     if (!applyProfile(m)) throw new Error('הקוד לא תקין');
     b.disabled = false;
     device = store.get('parkingDevice'); apt = Number(store.get('parkingApt')) || 0;
-    if (OS) OS.login(device);
+    pushTags();
     $('xferInput').value = ''; store.set('parkingXferDone', '1');
     $('aptOverlay').classList.remove('show');
     notify({ kind: 'ok', title: 'הפרטים הועברו', sub: apt ? 'דירה ' + apt + ' · הבקשות והמסירות שלך כאן' : '' });
