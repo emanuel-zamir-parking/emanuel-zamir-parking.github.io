@@ -709,12 +709,14 @@ function renderInstall() {
         var cls = k < instStep ? 'done' : k === instStep ? 'cur' : 'todo';
         html += '<div class="ist ' + cls + '"><span class="n">' + (k < instStep ? '✓' : k + 1) + '</span><span class="t">' + st.t + '</span></div>';
         if (k !== instStep) return;
-        html += '<div class="ist-det">' + st.d;
-        if (code && !st.code && !st.open) html += '<div class="ist-code"><span>הקוד שלך · <b>' + code + '</b></span><button class="ist-cp" type="button" data-app="copycode">העתק</button></div>';
-        html += '<div class="app-actions">';
+        html += '<div class="ist-det">';
+        // בשלבים אחרי קבלת הקוד: קודם הקוד עם "העתק" ו"חזרה", ומתחת ההסבר
+        if (!st.code && !st.open) html += '<div class="ist-code" style="margin:0 0 10px"><span style="flex:1">הקוד שלך · <b>' + code + '</b></span>' +
+          '<button class="ist-cp" type="button" data-app="copycode">העתק</button><button class="ist-cp" type="button" data-app="instback">חזרה</button></div>';
+        html += st.d + '<div class="app-actions">';
         if (st.open) html += '<button class="btn-ok" type="button" data-app="copylink">העתקת הקישור</button><button class="btn-gray" type="button" data-app="hide">לא עכשיו</button>';
         else if (st.code) html += '<button class="btn-ok" type="button" data-app="code">קבלת קוד</button><button class="btn-gray" type="button" data-app="hide">לא עכשיו</button>';
-        else html += (st.last ? '' : '<button class="submit" type="button" data-app="' + (st.copy ? 'instnextcopy' : 'instnext') + '">עשיתי, לשלב הבא</button>') + '<button class="btn-gray" type="button" data-app="instback">חזרה</button>';
+        else if (!st.last) html += '<button class="submit" type="button" data-app="' + (st.copy ? 'instnextcopy' : 'instnext') + '">עשיתי, לשלב הבא</button>';
         html += '</div></div>';
       });
       html += '</div>';
