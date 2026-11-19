@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ניהול חניה בבניין · עמנואל זמיר 8 · גרסה 3.2 · 19/11/2026 -->
+<!-- ניהול חניה בבניין · עמנואל זמיר 8 · גרסה 3.3 · 19/11/2026 -->
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
@@ -178,6 +178,11 @@ form.card input[type=text], form.card input[type=number], form.card input[type=d
 .ist-code { margin-top: 8px; padding: 6px; border-radius: 8px; background: var(--surface); text-align: center; font-size: 13px; color: var(--muted); }
 .ist-code b { color: var(--text); letter-spacing: 4px; direction: ltr; display: inline-block; font-size: 16px; }
 .ist-url { display: block; margin-top: 8px; padding: 8px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); direction: ltr; text-align: center; color: var(--sign); font-size: 13px; }
+.ist-code { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ist-cp { border: 1px solid var(--line); background: var(--sunk); border-radius: 8px; padding: 3px 10px; font-size: 13px; }
+.ist-pic { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; }
+.ist-hl { color: var(--sign); font-weight: 700; outline: 2px solid var(--paint); outline-offset: 2px; border-radius: 4px; padding: 0 4px; }
+.share-ic { display: inline-block; vertical-align: middle; color: var(--sign); }
 .btn-ok { flex: 1; height: 44px; border: 0; border-radius: 12px; background: var(--ok); color: var(--surface); font-weight: 700; }
 .btn-gray { height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--sunk); }
 .foot { text-align: center; font-size: 12px; color: var(--muted); margin-top: 4px; }
@@ -346,7 +351,7 @@ form.card input[type=text], form.card input[type=number], form.card input[type=d
 <script>
 var CONFIG = window.CONFIG || { API_URL: '', ONESIGNAL_APP_ID: '' };
 var APTS = 51;
-var VERSION = '3.2';
+var VERSION = '3.3';
 var editReq = null, editOff = null;
 var GROUP_URL = 'https://chat.whatsapp.com/LEOuJTs7H9wCfbiMCOFCmb';
 var MIN_MS = 30 * 60 * 1000;
@@ -666,25 +671,30 @@ function savedCode() {
   var c = store.get('parkingXferCode'), until = Number(store.get('parkingXferUntil')) || 0;
   return c && until > Date.now() ? c : '';
 }
+var SHARE_SVG = '<svg class="share-ic" width="20" height="24" viewBox="0 0 22 26" aria-label="כפתור השיתוף"><path d="M11 2v14M6 7l5-5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 11H4v13h14V11h-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
+var ADD_SVG = '<svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><rect x="2" y="2" width="16" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 6v8M6 10h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
 function installSteps(br) {
-  var shareIc = '<span aria-hidden="true">⇪</span>';
-  var share = br === 'chrome'
-    ? { t: 'לוחצים על כפתור השיתוף בכרום', d: 'בכרום הכפתור ' + shareIc + ' נמצא למעלה, בתוך שורת הכתובת מימין.' }
-    : br === 'other'
-      ? { t: 'לוחצים על כפתור השיתוף של הדפדפן', d: 'הכפתור ' + shareIc + ' נמצא בתפריט של הדפדפן, בשורת הכתובת או בתחתית המסך.' }
-      : { t: 'לוחצים על כפתור השיתוף בספארי', d: 'הריבוע עם החץ ' + shareIc + ' בתחתית המסך. אם הוא לא שם, לוחצים קודם על שלוש הנקודות ליד שורת הכתובת.' };
-  share.d += '<div class="ist-ok">✓ אתה כבר בכתובת הנכונה</div>';
   var list = [
-    { t: 'מקבלים קוד העברה', d: 'הקוד מעביר לאפליקציה המותקנת את הדירה, השם והבקשות שלך. הוא תקף 15 דקות.', code: 1 },
-    share,
-    { t: 'בוחרים "הוסף למסך הבית"', d: 'ברשימה שנפתחה גוללים למטה עד "הוסף למסך הבית" ולוחצים עליו.' },
-    { t: 'לוחצים "הוסף"', d: 'בפינה העליונה של המסך. השם "חניה זמיר 8" כבר ממולא.' },
-    { t: 'פותחים מהאייקון ומזינים את הקוד', d: 'סוגרים את הדפדפן ופותחים את "חניה זמיר 8" ממסך הבית. בוחרים "כן, יש לי קוד העברה" ומקלידים את הקוד.', last: 1 }
+    { t: 'קבלת קוד להפעלת האפליקציה וקבלת התראות', d: 'לוחצים על הכפתור הירוק. הקוד תקף 15 דקות.', code: 1 },
+    { t: 'לוחצים על כפתור השיתוף', d: 'לוחצים על כפתור השיתוף ' + SHARE_SVG + '<br>לא רואים אותו? לוחצים על ⋯ ואז "שיתוף"', copy: 1 },
+    { t: 'בוחרים "הוסף למסך הבית" ולוחצים "הוסף"', d: 'ברשימה שנפתחה גוללים עד:' +
+      '<div class="ist-pic" style="display:flex;justify-content:space-between;align-items:center"><span>הוסף למסך הבית</span>' + ADD_SVG + '</div>' +
+      '<div style="margin-top:8px">ואז לוחצים "הוסף" בפינה העליונה:</div>' +
+      '<div class="ist-pic"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="color:var(--sign)">ביטול</span><b>הוסף למסך הבית</b><span class="ist-hl">הוסף</span></div>' +
+      '<div style="display:flex;gap:8px;align-items:center"><span class="sign" style="width:28px;height:28px;font-size:17px;border-radius:7px">P</span>חניה זמיר 8</div></div>' +
+      '<div style="margin-top:8px;font-weight:700">אחר כך חוזרים למסך הזה להמשך.</div>' },
+    { t: 'פותחים מהאייקון ומדביקים את הקוד', d: 'פותחים את "חניה זמיר 8" ממסך הבית, בוחרים "כן, יש לי קוד העברה", ומדביקים את הקוד.', last: 1 }
   ];
   if (br === 'inapp') list.unshift({ t: 'פותחים בספארי או בכרום',
     d: 'מהדפדפן הזה אי אפשר להתקין. מעתיקים את הקישור, פותחים את ספארי או כרום, ומדביקים בשורת הכתובת.' +
       '<a class="ist-url" href="' + SITE_URL + '" target="_blank" rel="noopener">' + SITE_URL.replace(/^https?:\/\//, '') + '</a>', open: 1 });
   return list;
+}
+function androidHelp() {
+  var ua = navigator.userAgent;
+  if (!/Android/.test(ua)) return 'בתפריט של הדפדפן בוחרים "התקנת אפליקציה" או "הוספה למסך הבית".';
+  if (/SamsungBrowser/.test(ua)) return 'בסרגל התחתון לוחצים על שלוש הנקודות ⋮, בוחרים "הוסף דף אל" ואז "מסך הבית".';
+  return 'לוחצים על שלוש הנקודות ⋮ למעלה מימין, ובוחרים "התקנת אפליקציה" או "הוספה למסך הבית".';
 }
 function renderInstall() {
   var c = $('installCard'), html = '';
@@ -700,17 +710,17 @@ function renderInstall() {
         html += '<div class="ist ' + cls + '"><span class="n">' + (k < instStep ? '✓' : k + 1) + '</span><span class="t">' + st.t + '</span></div>';
         if (k !== instStep) return;
         html += '<div class="ist-det">' + st.d;
-        if (code && !st.code && !st.open) html += '<div class="ist-code">הקוד שלך · <b>' + code + '</b></div>';
+        if (code && !st.code && !st.open) html += '<div class="ist-code"><span>הקוד שלך · <b>' + code + '</b></span><button class="ist-cp" type="button" data-app="copycode">העתק</button></div>';
         html += '<div class="app-actions">';
         if (st.open) html += '<button class="btn-ok" type="button" data-app="copylink">העתקת הקישור</button><button class="btn-gray" type="button" data-app="hide">לא עכשיו</button>';
-        else if (st.code) html += '<button class="btn-ok" type="button" data-app="code">קבלת קוד העברה</button><button class="btn-gray" type="button" data-app="hide">לא עכשיו</button>';
-        else html += (st.last ? '' : '<button class="submit" type="button" data-app="instnext">עשיתי, לשלב הבא</button>') + '<button class="btn-gray" type="button" data-app="instback">חזרה</button>';
+        else if (st.code) html += '<button class="btn-ok" type="button" data-app="code">קבלת קוד</button><button class="btn-gray" type="button" data-app="hide">לא עכשיו</button>';
+        else html += (st.last ? '' : '<button class="submit" type="button" data-app="' + (st.copy ? 'instnextcopy' : 'instnext') + '">עשיתי, לשלב הבא</button>') + '<button class="btn-gray" type="button" data-app="instback">חזרה</button>';
         html += '</div></div>';
       });
       html += '</div>';
     } else {
       html = '<h2>התקנת האפליקציה</h2><div class="muted">' +
-        (deferredPrompt ? 'אייקון במסך הבית, מסך מלא, והתראה כשתקבל חניה.' : 'בתפריט של הדפדפן, שלוש הנקודות, בוחרים "התקנת אפליקציה" או "הוספה למסך הבית".') +
+        (deferredPrompt ? 'אייקון במסך הבית, מסך מלא, והתראה כשתקבל חניה.' : androidHelp()) +
         '</div><div class="app-actions">' + (deferredPrompt ? '<button class="btn-ok" type="button" data-app="install">התקנה</button>' : '') +
         '<button class="btn-gray" type="button" data-app="hide">לא עכשיו</button></div>';
     }
@@ -753,6 +763,14 @@ function appAction(a, btn) {
     }).catch(function (x) { btn.disabled = false; notify({ kind: 'err', title: 'לא הצלחתי ליצור קוד', sub: errMsg(x) }); });
   }
   if (a === 'instnext') { instStep++; renderInstall(); }
+  if (a === 'instnextcopy') {
+    var cc = savedCode(); instStep++; renderInstall();
+    if (cc && copyText(cc)) notify({ kind: 'ok', title: 'הקוד הועתק', sub: 'באפליקציה המותקנת פשוט מדביקים אותו' });
+  }
+  if (a === 'copycode') {
+    var c2 = savedCode();
+    if (c2 && copyText(c2)) notify({ kind: 'ok', title: 'הקוד הועתק' }); else if (c2) window.prompt('העתק את הקוד:', c2);
+  }
   if (a === 'instback') { instStep = Math.max(0, instStep - 1); if (instStep === 0) { store.set('parkingXferCode', ''); } renderInstall(); }
   if (a === 'showinstall') { store.set('parkingInstallHide', ''); renderAppCard(); $('installCard').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
   if (a === 'copylink') {
