@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ניהול חניה בבניין · עמנואל זמיר 8 · גרסה 3.4 · 19/11/2026 -->
+<!-- ניהול חניה בבניין · עמנואל זמיר 8 · גרסה 3.5 · 20/11/2026 -->
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
@@ -51,6 +51,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--sign); outl
 header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .sign { width: 44px; height: 44px; border-radius: 8px; background: var(--sign); color: var(--on-sign);
   display: grid; place-items: center; font-weight: 700; font-size: 28px; flex: none; }
+.sign-img { width: 44px; height: 44px; border-radius: 10px; flex: none; display: block; }
 .titles { flex: 1; line-height: 1.25; }
 header h1 { font-size: 20px; font-weight: 700; margin: 0; }
 .addr { font-size: 15px; color: var(--muted); }
@@ -215,7 +216,7 @@ form.card input[type=text], form.card input[type=number], form.card input[type=d
 <body>
 <div class="wrap">
   <header>
-    <div class="sign" aria-hidden="true">P</div>
+    <img class="sign-img" src="icons/icon-192.png" alt="" aria-hidden="true">
     <div class="titles"><h1>ניהול חניה בבניין<span class="ver" id="ver"></span></h1><div class="addr">עמנואל זמיר 8</div></div>
     <button class="apt-btn" id="aptBtn" type="button">דירה —</button>
   </header>
@@ -351,7 +352,7 @@ form.card input[type=text], form.card input[type=number], form.card input[type=d
 <script>
 var CONFIG = window.CONFIG || { API_URL: '', ONESIGNAL_APP_ID: '' };
 var APTS = 51;
-var VERSION = '3.4';
+var VERSION = '3.5';
 var editReq = null, editOff = null;
 var GROUP_URL = 'https://chat.whatsapp.com/LEOuJTs7H9wCfbiMCOFCmb';
 var MIN_MS = 30 * 60 * 1000;
@@ -1189,13 +1190,45 @@ document.addEventListener('click', function (e) {
   }
 });
 
+// ---------- עדכון אוטומטי ----------
+// בכל פתיחה בודקים בשקט אם בשרת יש גרסה חדשה יותר, ועוקפים את הזיכרון של הטלפון.
+// אם יש, טוענים אותה מחדש. ניסיון אחד לכל גרסה בכל 10 דקות, כדי שלא תיווצר לולאה.
+function newerVersion(a, b) {
+  var x = String(a).split('.'), y = String(b).split('.');
+  for (var k = 0; k < Math.max(x.length, y.length); k++) {
+    var d = (Number(x[k]) || 0) - (Number(y[k]) || 0);
+    if (d) return d > 0;
+  }
+  return false;
+}
+function checkUpdate() {
+  fetch(location.pathname + '?vcheck=' + Date.now(), { cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.text() : ''; })
+    .then(function (t) {
+      var m = /var VERSION = '([\d.]+)'/.exec(t);
+      if (!m || !newerVersion(m[1], VERSION)) return;
+      var tried = store.get('parkingUpdateTry') || '';
+      if (tried.split('|')[0] === m[1] && Date.now() - Number(tried.split('|')[1]) < 600000) return;
+      store.set('parkingUpdateTry', m[1] + '|' + Date.now());
+      store.set('parkingUpdatedTo', m[1]);
+      location.replace(location.pathname + '?v=' + m[1]);
+    }).catch(function () {});
+}
+if (store.get('parkingUpdatedTo') === VERSION) {
+  store.set('parkingUpdatedTo', '');
+  setTimeout(function () { notify({ kind: 'ok', title: 'האפליקציה עודכנה', sub: 'גרסה ' + VERSION }); }, 600);
+}
+var lastCheck = 0;
+function maybeCheckUpdate() { if (Date.now() - lastCheck > 60000) { lastCheck = Date.now(); checkUpdate(); } }
+
 // ---------- הפעלה ----------
 $('ver').textContent = 'גרסה ' + VERSION;
 if (needsCode() && !store.get('parkingFirstOpen')) store.set('parkingFirstOpen', String(Date.now()));
 renderAppCard();
 refresh().then(function () { if (!apt) askApt(); });
 setInterval(function () { if (!document.hidden) refresh(); }, 20000);
-document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
+document.addEventListener('visibilitychange', function () { if (!document.hidden) { refresh(); maybeCheckUpdate(); } });
+maybeCheckUpdate();
 </script>
 </body>
 </html>
