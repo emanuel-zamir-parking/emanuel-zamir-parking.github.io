@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ניהול חניה בבניין · עמנואל זמיר 8 · גרסה 3.1 · 09/11/2026 -->
+<!-- ניהול חניה בבניין · עמנואל זמיר 8 · גרסה 3.4 · 20/11/2026 -->
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
@@ -162,6 +162,29 @@ form.card input[type=text], form.card input[type=number], form.card input[type=d
 .copy { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 4px 10px; font-size: 12px; margin-top: 4px; }
 .xfer-tip { display: flex; gap: 10px; align-items: flex-start; }
 .xfer-tip .ic { font-size: 20px; color: var(--sign); line-height: 1.2; }
+.install { background: var(--sign-soft); border: 1.5px solid var(--sign); }
+.install h2 { color: var(--sign); font-weight: 700; margin-bottom: 2px; }
+.ist { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.ist:first-of-type { border-top: 0; }
+.ist .n { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.ist.cur .n { background: var(--sign); color: var(--on-sign); }
+.ist.cur .t { font-weight: 700; color: var(--sign); }
+.ist.done .n { background: var(--ok-soft); color: var(--ok); }
+.ist.done .t { color: var(--muted); }
+.ist.todo .n { border: 1px solid var(--line); color: var(--muted); }
+.ist.todo .t { color: var(--muted); }
+.ist-det { padding: 0 34px 8px 0; font-size: 14px; }
+.ist-ok { display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 6px 10px; border-radius: 8px; background: var(--ok-soft); color: var(--ok); font-size: 13px; }
+.ist-code { margin-top: 8px; padding: 6px; border-radius: 8px; background: var(--surface); text-align: center; font-size: 13px; color: var(--muted); }
+.ist-code b { color: var(--text); letter-spacing: 4px; direction: ltr; display: inline-block; font-size: 16px; }
+.ist-url { display: block; margin-top: 8px; padding: 8px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); direction: ltr; text-align: center; color: var(--sign); font-size: 13px; }
+.ist-code { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ist-cp { border: 1px solid var(--line); background: var(--sunk); border-radius: 8px; padding: 3px 10px; font-size: 13px; }
+.ist-pic { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; }
+.ist-hl { color: var(--sign); font-weight: 700; outline: 2px solid var(--paint); outline-offset: 2px; border-radius: 4px; padding: 0 4px; }
+.share-ic { display: inline-block; vertical-align: middle; color: var(--sign); }
+.btn-ok { flex: 1; height: 44px; border: 0; border-radius: 12px; background: var(--ok); color: var(--surface); font-weight: 700; }
+.btn-gray { height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--sunk); }
 .foot { text-align: center; font-size: 12px; color: var(--muted); margin-top: 4px; }
 .foot button { border: 0; background: transparent; color: var(--sign); text-decoration: underline; font-size: 12px; padding: 4px; }
 
@@ -286,6 +309,8 @@ form.card input[type=text], form.card input[type=number], form.card input[type=d
     <div id="offersList"></div>
   </section>
 
+  <section class="card install" id="installCard" hidden></section>
+
   <div class="foot" id="foot"></div>
 </div>
 
@@ -326,7 +351,7 @@ form.card input[type=text], form.card input[type=number], form.card input[type=d
 <script>
 var CONFIG = window.CONFIG || { API_URL: '', ONESIGNAL_APP_ID: '' };
 var APTS = 51;
-var VERSION = '3.1';
+var VERSION = '3.4';
 var editReq = null, editOff = null;
 var GROUP_URL = 'https://chat.whatsapp.com/LEOuJTs7H9wCfbiMCOFCmb';
 var MIN_MS = 30 * 60 * 1000;
@@ -621,22 +646,6 @@ function renderAppCard() {
       '<div class="app-actions"><button class="submit" type="button" data-app="xfercode">הזנת קוד העברה</button>' +
       '<button class="ghost" type="button" data-app="xferhide">לא צריך</button></div>');
   }
-  if (!isStandalone() && !store.get('parkingInstallHide')) {
-    if (isIOS()) {
-      parts.push('<h2>התקנת האפליקציה</h2><div class="muted">כך היא תיפתח במסך מלא, ותוכל לקבל התראה כשתקבל חניה.</div><div class="app-steps">' +
-        step(1, 'לוחצים על כפתור השיתוף, הריבוע עם החץ למעלה') + step(2, 'בוחרים "הוסף למסך הבית" ואז "הוסף"') +
-        step(3, 'פותחים מהאייקון ומזינים את קוד ההעברה') + '</div>' +
-        (xferCode ? '<div class="code-big">' + xferCode + '</div><div class="muted" style="text-align:center">קוד ההעברה שלך · תקף 15 דקות</div>'
-          : '<div class="muted" style="margin-top:8px">באייפון, האפליקציה המותקנת לא רואה את מה שנשמר בדפדפן. קוד ההעברה מעביר אליה את הבקשות, המסירות והפרטים שלך.</div>') +
-        '<div class="app-actions">' + (xferCode ? '' : '<button class="submit" type="button" data-app="code">קבלת קוד העברה</button>') +
-        '<button class="ghost" type="button" data-app="hide">' + (xferCode ? 'סגור' : 'לא עכשיו') + '</button></div>');
-    } else {
-      parts.push('<h2>התקנת האפליקציה</h2><div class="muted">' +
-        (deferredPrompt ? 'אייקון במסך הבית, מסך מלא, והתראה כשתקבל חניה.' : 'בתפריט של הדפדפן, שלוש הנקודות, בוחרים "התקנת אפליקציה" או "הוספה למסך הבית".') +
-        '</div><div class="app-actions">' + (deferredPrompt ? '<button class="submit" type="button" data-app="install">התקנה</button>' : '') +
-        '<button class="ghost" type="button" data-app="hide">לא עכשיו</button></div>');
-    }
-  }
   if (pushPossible() && perm() === 'default' && !store.get('parkingPushHide')) {
     parts.push('<h2>קבלת התראות</h2><div class="muted">נשלח לך התראה כשתקבל חניה, עם המספר והשעות.</div>' +
       '<div class="app-actions"><button class="submit" type="button" data-app="push">הפעלת התראות</button>' +
@@ -644,19 +653,105 @@ function renderAppCard() {
   }
   $('appCard').innerHTML = parts.join('<div style="height:16px"></div>');
   $('appCard').hidden = !parts.length;
+  renderInstall();
   renderFoot();
+}
+// ---------- כרטיס ההתקנה, בתחתית המסך ----------
+// באייפון: שלב אחד פתוח בכל פעם, והשלבים מותאמים לדפדפן (ספארי, כרום, או דפדפן פנימי של אפליקציה אחרת)
+var SITE_URL = location.origin + location.pathname;
+var instStep = 0;
+function iosBrowser() {
+  var ua = navigator.userAgent;
+  if (!/Safari\//.test(ua) || /FBAN|FBAV|Instagram|Line\//.test(ua)) return 'inapp';
+  if (/CriOS/.test(ua)) return 'chrome';
+  if (/FxiOS|EdgiOS/.test(ua)) return 'other';
+  return 'safari';
+}
+function savedCode() {
+  var c = store.get('parkingXferCode'), until = Number(store.get('parkingXferUntil')) || 0;
+  return c && until > Date.now() ? c : '';
+}
+var SHARE_SVG = '<svg class="share-ic" width="20" height="24" viewBox="0 0 22 26" aria-label="כפתור השיתוף"><path d="M11 2v14M6 7l5-5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 11H4v13h14V11h-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
+var ADD_SVG = '<svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><rect x="2" y="2" width="16" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 6v8M6 10h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+function installSteps(br) {
+  var list = [
+    { t: 'קבלת קוד להפעלת האפליקציה וקבלת התראות', d: 'לוחצים על הכפתור הירוק. הקוד תקף 15 דקות.', code: 1 },
+    { t: 'לוחצים על כפתור השיתוף', d: 'לוחצים על כפתור השיתוף ' + SHARE_SVG + '<br>לא רואים אותו? לוחצים על ⋯ ואז "שיתוף"', copy: 1 },
+    { t: 'בוחרים "הוסף למסך הבית" ולוחצים "הוסף"', d: 'ברשימה שנפתחה גוללים עד:' +
+      '<div class="ist-pic" style="display:flex;justify-content:space-between;align-items:center"><span>הוסף למסך הבית</span>' + ADD_SVG + '</div>' +
+      '<div style="margin-top:8px">ואז לוחצים "הוסף" בפינה העליונה:</div>' +
+      '<div class="ist-pic"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="color:var(--sign)">ביטול</span><b>הוסף למסך הבית</b><span class="ist-hl">הוסף</span></div>' +
+      '<div style="display:flex;gap:8px;align-items:center"><span class="sign" style="width:28px;height:28px;font-size:17px;border-radius:7px">P</span>חניה זמיר 8</div></div>' +
+      '<div style="margin-top:8px;font-weight:700">אחר כך חוזרים למסך הזה להמשך.</div>' },
+    { t: 'פותחים מהאייקון ומדביקים את הקוד', d: 'פותחים את "חניה זמיר 8" ממסך הבית, בוחרים "כן, יש לי קוד העברה", ומדביקים את הקוד.', last: 1 }
+  ];
+  if (br === 'inapp') list.unshift({ t: 'פותחים בספארי או בכרום',
+    d: 'מהדפדפן הזה אי אפשר להתקין. מעתיקים את הקישור, פותחים את ספארי או כרום, ומדביקים בשורת הכתובת.' +
+      '<a class="ist-url" href="' + SITE_URL + '" target="_blank" rel="noopener">' + SITE_URL.replace(/^https?:\/\//, '') + '</a>', open: 1 });
+  return list;
+}
+function androidHelp() {
+  var ua = navigator.userAgent;
+  if (!/Android/.test(ua)) return 'בתפריט של הדפדפן בוחרים "התקנת אפליקציה" או "הוספה למסך הבית".';
+  if (/SamsungBrowser/.test(ua)) return 'בסרגל התחתון לוחצים על שלוש הנקודות ⋮, בוחרים "הוסף דף אל" ואז "מסך הבית".';
+  return 'לוחצים על שלוש הנקודות ⋮ למעלה מימין, ובוחרים "התקנת אפליקציה" או "הוספה למסך הבית".';
+}
+function renderInstall() {
+  var c = $('installCard'), html = '';
+  if (!isStandalone() && !store.get('parkingInstallHide')) {
+    if (isIOS()) {
+      var br = iosBrowser(), list = installSteps(br), code = savedCode();
+      if (br === 'inapp') instStep = 0;
+      else if (!code) instStep = 0;
+      else if (instStep < 1) instStep = 1;
+      html = '<h2>התקנת האפליקציה באייפון</h2><div class="muted">פעם אחת, כדקה. אחר כך היא נפתחת במסך מלא ומקבלת התראות. שלב ' + (instStep + 1) + ' מתוך ' + list.length + '</div><div style="margin-top:6px">';
+      list.forEach(function (st, k) {
+        var cls = k < instStep ? 'done' : k === instStep ? 'cur' : 'todo';
+        html += '<div class="ist ' + cls + '"><span class="n">' + (k < instStep ? '✓' : k + 1) + '</span><span class="t">' + st.t + '</span></div>';
+        if (k !== instStep) return;
+        html += '<div class="ist-det">';
+        // בשלבים אחרי קבלת הקוד: קודם הקוד עם "העתק" ו"חזרה", ומתחת ההסבר
+        if (!st.code && !st.open) html += '<div class="ist-code" style="margin:0 0 10px"><span style="flex:1">הקוד שלך · <b>' + code + '</b></span>' +
+          '<button class="ist-cp" type="button" data-app="copycode">העתק</button><button class="ist-cp" type="button" data-app="instback">חזרה</button></div>';
+        html += st.d + '<div class="app-actions">';
+        if (st.open) html += '<button class="btn-ok" type="button" data-app="copylink">העתקת הקישור</button><button class="btn-gray" type="button" data-app="hide">לא עכשיו</button>';
+        else if (st.code) html += '<button class="btn-ok" type="button" data-app="code">קבלת קוד</button><button class="btn-gray" type="button" data-app="hide">לא עכשיו</button>';
+        else if (!st.last) html += '<button class="submit" type="button" data-app="' + (st.copy ? 'instnextcopy' : 'instnext') + '">עשיתי, לשלב הבא</button>';
+        html += '</div></div>';
+      });
+      html += '</div>';
+    } else {
+      html = '<h2>התקנת האפליקציה</h2><div class="muted">' +
+        (deferredPrompt ? 'אייקון במסך הבית, מסך מלא, והתראה כשתקבל חניה.' : androidHelp()) +
+        '</div><div class="app-actions">' + (deferredPrompt ? '<button class="btn-ok" type="button" data-app="install">התקנה</button>' : '') +
+        '<button class="btn-gray" type="button" data-app="hide">לא עכשיו</button></div>';
+    }
+  }
+  c.innerHTML = html;
+  c.hidden = !html;
 }
 function renderFoot() {
   var bits = [];
-  if (CONFIG.ONESIGNAL_APP_ID && perm() === 'granted') bits.push('התראות פעילות · <button type="button" data-app="test">שליחת התראת בדיקה</button>');
+  if (CONFIG.ONESIGNAL_APP_ID && perm() === 'granted') {
+    bits.push('התראות פעילות · <button type="button" data-app="test">שליחת התראת בדיקה</button>');
+    bits.push('בקשות של שכנים: ' + (reqsOn() ? '<b style="color:var(--ok)">מופעל</b> · <button type="button" data-app="reqsoff">כיבוי</button>'
+      : '<b>כבוי</b> · <button type="button" data-app="reqson">הפעלה</button>'));
+  }
   else if (pushPossible() && perm() === 'denied') bits.push('ההתראות חסומות. אפשר להפעיל אותן בהגדרות הטלפון.');
   else if (pushPossible() && perm() === 'default' && store.get('parkingPushHide')) bits.push('<button type="button" data-app="push">הפעלת התראות</button>');
-  if (!isStandalone() && isIOS() && store.get('parkingInstallHide')) bits.push('<button type="button" data-app="code">קוד העברה לאפליקציה המותקנת</button>');
+  if (!isStandalone() && store.get('parkingInstallHide')) bits.push('<button type="button" data-app="showinstall">התקנת האפליקציה</button>');
   $('foot').innerHTML = bits.join('<br>');
+}
+// תגיות ב-OneSignal: מזהה הטלפון (כדי שמי שביקש לא יקבל התראה על הבקשה של עצמו), והאם לקבל התראות על בקשות של שכנים
+function reqsOn() { return store.get('parkingReqsOff') !== '1'; }
+function pushTags() {
+  if (!OS) return Promise.resolve();
+  return OS.login(device).then(function () { return OS.User.addTags({ device: device, reqs: reqsOn() ? 'on' : 'off' }); })
+    .catch(function (e) { console.warn('OneSignal tags', e); });
 }
 function enablePush() {
   if (!OS) { notify({ kind: 'err', title: 'ההתראות עוד נטענות', sub: 'נסה שוב בעוד כמה שניות' }); return; }
-  OS.Notifications.requestPermission().then(function () { return OS.login(device); }).then(function () {
+  OS.Notifications.requestPermission().then(pushTags).then(function () {
     store.set('parkingPushHide', '');
     renderAppCard();
     if (perm() === 'granted') notify({ kind: 'ok', title: 'ההתראות הופעלו', sub: 'נשלח לך התראה כשתקבל חניה' });
@@ -673,12 +768,32 @@ function appAction(a, btn) {
     deferredPrompt.userChoice.then(function () { deferredPrompt = null; renderAppCard(); });
   }
   if (a === 'code') {
-    store.set('parkingInstallHide', '');
     btn.disabled = true;
     call('createTransfer', profile()).then(function (r) {
-      xferCode = r.code; renderAppCard();
-      $('appCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      store.set('parkingXferCode', r.code); store.set('parkingXferUntil', String(Date.now() + (r.minutes || 15) * 60000));
+      instStep = 1; renderInstall();
+      $('installCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }).catch(function (x) { btn.disabled = false; notify({ kind: 'err', title: 'לא הצלחתי ליצור קוד', sub: errMsg(x) }); });
+  }
+  if (a === 'reqsoff' || a === 'reqson') {
+    store.set('parkingReqsOff', a === 'reqsoff' ? '1' : '');
+    pushTags(); renderFoot();
+    notify({ kind: 'ok', title: a === 'reqsoff' ? 'לא תקבל התראות על בקשות של שכנים' : 'תקבל התראה כששכן מבקש חניה', sub: a === 'reqsoff' ? 'התראה כשאתה מקבל חניה תמשיך להגיע' : '' });
+  }
+  if (a === 'instnext') { instStep++; renderInstall(); }
+  if (a === 'instnextcopy') {
+    var cc = savedCode(); instStep++; renderInstall();
+    if (cc && copyText(cc)) notify({ kind: 'ok', title: 'הקוד הועתק', sub: 'באפליקציה המותקנת פשוט מדביקים אותו' });
+  }
+  if (a === 'copycode') {
+    var c2 = savedCode();
+    if (c2 && copyText(c2)) notify({ kind: 'ok', title: 'הקוד הועתק' }); else if (c2) window.prompt('העתק את הקוד:', c2);
+  }
+  if (a === 'instback') { instStep = Math.max(0, instStep - 1); if (instStep === 0) { store.set('parkingXferCode', ''); } renderInstall(); }
+  if (a === 'showinstall') { store.set('parkingInstallHide', ''); renderAppCard(); $('installCard').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  if (a === 'copylink') {
+    if (copyText(SITE_URL)) notify({ kind: 'ok', title: 'הקישור הועתק', sub: 'פותחים את ספארי או כרום ומדביקים בשורת הכתובת' });
+    else window.prompt('העתק את הקישור והדבק בספארי או בכרום:', SITE_URL);
   }
   if (a === 'test') {
     btn.disabled = true;
@@ -700,7 +815,7 @@ if (CONFIG.ONESIGNAL_APP_ID) OneSignalDeferred.push(function (OneSignal) {
     .then(function () {
       OS = OneSignal;
       OneSignal.Notifications.addEventListener('permissionChange', function () { renderAppCard(); });
-      return OneSignal.login(device);
+      return pushTags();
     })
     .then(renderAppCard)
     .catch(function (e) { console.warn('OneSignal', e); });
@@ -806,7 +921,7 @@ $('xferGo').onclick = function () {
     if (!applyProfile(m)) throw new Error('הקוד לא תקין');
     b.disabled = false;
     device = store.get('parkingDevice'); apt = Number(store.get('parkingApt')) || 0;
-    if (OS) OS.login(device);
+    pushTags();
     $('xferInput').value = ''; store.set('parkingXferDone', '1');
     $('aptOverlay').classList.remove('show');
     notify({ kind: 'ok', title: 'הפרטים הועברו', sub: apt ? 'דירה ' + apt + ' · הבקשות והמסירות שלך כאן' : '' });
@@ -1074,13 +1189,45 @@ document.addEventListener('click', function (e) {
   }
 });
 
+// ---------- עדכון אוטומטי ----------
+// בכל פתיחה בודקים בשקט אם בשרת יש גרסה חדשה יותר, ועוקפים את הזיכרון של הטלפון.
+// אם יש, טוענים אותה מחדש. ניסיון אחד לכל גרסה בכל 10 דקות, כדי שלא תיווצר לולאה.
+function newerVersion(a, b) {
+  var x = String(a).split('.'), y = String(b).split('.');
+  for (var k = 0; k < Math.max(x.length, y.length); k++) {
+    var d = (Number(x[k]) || 0) - (Number(y[k]) || 0);
+    if (d) return d > 0;
+  }
+  return false;
+}
+function checkUpdate() {
+  fetch(location.pathname + '?vcheck=' + Date.now(), { cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.text() : ''; })
+    .then(function (t) {
+      var m = /var VERSION = '([\d.]+)'/.exec(t);
+      if (!m || !newerVersion(m[1], VERSION)) return;
+      var tried = store.get('parkingUpdateTry') || '';
+      if (tried.split('|')[0] === m[1] && Date.now() - Number(tried.split('|')[1]) < 600000) return;
+      store.set('parkingUpdateTry', m[1] + '|' + Date.now());
+      store.set('parkingUpdatedTo', m[1]);
+      location.replace(location.pathname + '?v=' + m[1]);
+    }).catch(function () {});
+}
+if (store.get('parkingUpdatedTo') === VERSION) {
+  store.set('parkingUpdatedTo', '');
+  setTimeout(function () { notify({ kind: 'ok', title: 'האפליקציה עודכנה', sub: 'גרסה ' + VERSION }); }, 600);
+}
+var lastCheck = 0;
+function maybeCheckUpdate() { if (Date.now() - lastCheck > 60000) { lastCheck = Date.now(); checkUpdate(); } }
+
 // ---------- הפעלה ----------
 $('ver').textContent = 'גרסה ' + VERSION;
 if (needsCode() && !store.get('parkingFirstOpen')) store.set('parkingFirstOpen', String(Date.now()));
 renderAppCard();
 refresh().then(function () { if (!apt) askApt(); });
 setInterval(function () { if (!document.hidden) refresh(); }, 20000);
-document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
+document.addEventListener('visibilitychange', function () { if (!document.hidden) { refresh(); maybeCheckUpdate(); } });
+maybeCheckUpdate();
 </script>
 </body>
 </html>
