@@ -1,0 +1,32 @@
+{
+  "id": "./test.html",
+  "name": "חניה · בדיקה",
+  "short_name": "חניה · בדיקה",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "./test.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ECEEF0",
+  "theme_color": "#F08C1E",
+  "icons": [
+    {
+      "src": "icons/test-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/test-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/test-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
